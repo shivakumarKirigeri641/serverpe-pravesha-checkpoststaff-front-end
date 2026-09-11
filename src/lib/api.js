@@ -86,7 +86,7 @@ export const api = {
   arrivals: (date) => call(`/arrivals${date ? `?date=${date}` : ''}`),
   search: (q) => call(`/search?q=${encodeURIComponent(q)}`),
   pass: (ticketNo) => call(`/pass/${encodeURIComponent(ticketNo)}`),
-  entry: (ticketNo, { override = false, typed = null } = {}) =>
-    call('/entry', { method: 'POST', body: { ticketNo, override, typed } }),
+  entry: (ticketNo, { override = false, typed = null, elapsedMs = null } = {}) =>
+    call('/entry', { method: 'POST', body: { ticketNo, override, typed, elapsedMs } }),
   recent: () => call('/recent'),
 };

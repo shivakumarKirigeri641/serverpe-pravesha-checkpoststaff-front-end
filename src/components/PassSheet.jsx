@@ -16,6 +16,11 @@ import { clock, spacedPlate, toneOf, verdictOf } from '../lib/verdict';
  * when the staff member closes it, not on a timer that could hide a failure.
  */
 export default function PassSheet({ ticketNo, typed, onClose, onRecorded }) {
+  /* When this pass was opened. The difference between that and the moment the
+     button is pressed is how long the check actually took, and this phone is the
+     only place that knows both ends of it — the server sees one instant. It is
+     sent with the entry so the admin panel can report verification times. */
+  const [openedAt] = useState(() => Date.now());
   const [state, setState] = useState('loading');
   const [data, setData] = useState(null);      // { pass, verdict, message, blocking }
   const [result, setResult] = useState(null);  // what the entry call answered
@@ -45,7 +50,7 @@ export default function PassSheet({ ticketNo, typed, onClose, onRecorded }) {
   async function record(override = false) {
     setBusy(true); setError(null);
     try {
-      const out = await api.entry(ticketNo, { override, typed });
+      const out = await api.entry(ticketNo, { override, typed, elapsedMs: Date.now() - openedAt });
       setResult(out);
       if (out.ok) onRecorded?.(out);
       else if (out.verdict && out.pass) setData({ ...data, ...out, blocking: !out.needsOverride });
