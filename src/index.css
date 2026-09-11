@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  /* A gate phone is held one-handed; nothing here should need a pinch. */
+  body { @apply bg-shell text-ink font-sans antialiased; -webkit-tap-highlight-color: transparent; }
+  /* Staff type plates in a hurry — never let iOS zoom the field on focus. */
+  input, button, select { font-size: 16px; }
+}
+
+@layer components {
+  .card { @apply rounded-2xl border border-line bg-white shadow-soft; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3.5 font-semibold transition active:scale-[.98] disabled:opacity-50 disabled:active:scale-100; }
+  .btn-primary { @apply btn bg-brand text-white; }
+  .btn-go { @apply btn bg-pass-500 text-white text-[17px] py-4; }
+  .btn-stop { @apply btn bg-stop-600 text-white; }
+  .btn-quiet { @apply btn border border-line bg-white text-ink; }
+  .field { @apply w-full rounded-xl border border-line bg-white px-4 py-3.5 outline-none placeholder:text-muted/60 focus:border-brand-accent focus:ring-4 focus:ring-brand-accent/15; }
+  .label { @apply mb-1.5 block text-[13px] font-semibold uppercase tracking-wide text-muted; }
+  .chip { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-bold; }
+  .plate { @apply font-mono font-bold tracking-[0.06em]; }
+  /* Safe area for phones with a home bar, so the action button is reachable. */
+  .pad-bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
