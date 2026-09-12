@@ -329,6 +329,9 @@ export default function Gate() {
         <SellSheet
           prefill={selling}
           onClose={() => { setSelling(null); setQ(''); load({ quiet: true }); requestAnimationFrame(() => searchRef.current?.focus()); }}
+          /* The sale found the vehicle already has a pass: open that instead of
+             selling a second one. */
+          onOpenPass={(ticketNo) => setOpen({ ticketNo, typed: null })}
           onSold={(t) => remember({ ticketNo: t.ticketNo, regNo: t.regNo, at: t.enteredAt, sold: t.ticketNo, type: t.vehicleType || null })}
         />
       )}

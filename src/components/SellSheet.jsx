@@ -34,7 +34,7 @@ import { plateText } from '../lib/verdict';
 const TYPE_ICON = { BIKE: '🏍️', CAR: '🚗', TOOFAN: '🚙', TT: '🚐' };
 const METHODS = [['cash', 'Cash'], ['upi', 'UPI'], ['card', 'Card']];
 
-export default function SellSheet({ prefill, onClose, onSold }) {
+export default function SellSheet({ prefill, onClose, onSold, onOpenPass }) {
   const [options, setOptions] = useState(null);
   const [step, setStep] = useState('vehicle');
   const [error, setError] = useState(null);
@@ -119,6 +119,7 @@ export default function SellSheet({ prefill, onClose, onSold }) {
   const identityRule = (options?.identityKinds || []).find((k) => k.key === identityKind) || null;
   const vehicleReady = (noPlate || /^[A-Z0-9]{5,11}$/.test(regNo))
     && Boolean(chosenType)
+    && !looked?.alreadyBooked
     && (!unverified || identityNote.trim().length >= (identityRule?.min || 4));
   const vehicleShots = photos.filter((p) => p.kind === 'vehicle');
   const payReady = /^\d{10}$/.test(mobile) && Boolean(slotId)
@@ -180,7 +181,38 @@ export default function SellSheet({ prefill, onClose, onSold }) {
                   <p className="mt-1 text-[13px] text-muted">A temporary registration (TR) is fine — type it as it is on the vehicle.</p>
                 </div>
 
-                {looked?.found && (
+                {/*
+                  * ALREADY HAS ONE — SAID HERE, NOT AT THE TILL.
+                  *
+                  * One pass per vehicle per day was always enforced, but the
+                  * refusal used to arrive after the slot was chosen, the mobile
+                  * typed and the money in the staff member's hand. This is the
+                  * same fact, delivered while it can still save everybody the
+                  * trouble — and it names the pass, because the visitor usually
+                  * has one and does not know it.
+                  */}
+                {looked?.alreadyBooked && (
+                  <div className="rounded-xl border-2 border-stop-500/40 bg-stop-50 px-4 py-3">
+                    <div className="text-[15px] font-bold text-stop-700">
+                      {looked.alreadyBooked.status === 'used' ? 'Already came through today'
+                        : looked.alreadyBooked.beingPaidFor ? 'A pass is being paid for right now'
+                          : 'This vehicle already has a pass for today'}
+                    </div>
+                    <div className="mt-0.5 text-[14px] text-stop-700/90">{looked.alreadyBooked.message}</div>
+                    {!looked.alreadyBooked.beingPaidFor && (
+                      <div className="mt-2 rounded-lg bg-white/70 px-3 py-2">
+                        <div className="plate text-[17px]">{looked.alreadyBooked.ticketNo}</div>
+                        <div className="text-[13px] text-muted">{looked.alreadyBooked.slot}</div>
+                      </div>
+                    )}
+                    <button type="button" className="btn-primary mt-3 w-full"
+                      onClick={() => { onClose(); onOpenPass?.(looked.alreadyBooked.ticketNo); }}>
+                      {looked.alreadyBooked.status === 'used' ? 'Open that pass' : 'Open it and check them in'}
+                    </button>
+                  </div>
+                )}
+
+                {looked?.found && !looked.alreadyBooked && (
                   <div className="rounded-xl border border-pass-500/25 bg-pass-50 px-4 py-3">
                     <div className="text-[15px] font-bold text-pass-700">{looked.type.label}</div>
                     <div className="text-[13px] text-muted">{[looked.vehicle, looked.colour].filter(Boolean).join(' · ') || 'From the vehicle register'}</div>
