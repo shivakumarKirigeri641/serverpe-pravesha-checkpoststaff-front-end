@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import VehicleSheet from '../components/VehicleSheet.jsx';
-import { clock, spacedPlate } from '../lib/verdict';
+import { clock, plateText } from '../lib/verdict';
 
 /*
  * History — what this gate has already checked.
@@ -120,7 +120,7 @@ export default function History({ today }) {
                 <button type="button" onClick={() => setPlate(c.regNo)}
                   className="card flex w-full items-center gap-3 px-4 py-3 text-left active:scale-[.995]">
                   <div className="min-w-0 flex-1">
-                    <div className="plate text-[18px]">{spacedPlate(c.regNo)}</div>
+                    <div className="plate text-[18px]">{plateText(c.regNo)}</div>
                     <div className="truncate text-[13px] text-muted">
                       {clock(c.at)}{c.by ? ` · ${c.by}` : ''}{c.type ? ` · ${c.type}` : ''}
                       {c.seconds !== null && c.seconds !== undefined ? ` · ${c.seconds}s` : ''}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
-import { clock, spacedPlate, toneOf, verdictOf } from '../lib/verdict';
+import { clock, plateText, toneOf, verdictOf } from '../lib/verdict';
 
 /*
  * One pass, filling the bottom of the screen, with the verdict at the top and a
@@ -128,7 +128,7 @@ export default function PassSheet({ ticketNo, typed, onClose, onRecorded }) {
 
             {pass && (
               <div className="px-6 py-5">
-                <div className="plate text-3xl">{spacedPlate(pass.regNo)}</div>
+                <div className="plate text-3xl">{plateText(pass.regNo)}</div>
                 <div className="mt-1 text-[15px] text-muted">
                   {[pass.vehicle?.description || pass.vehicle, pass.category?.label].filter(Boolean).join(' · ')}
                 </div>

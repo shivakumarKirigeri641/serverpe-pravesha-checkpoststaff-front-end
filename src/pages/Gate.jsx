@@ -3,7 +3,7 @@ import { api } from '../lib/api';
 import { useSession } from '../lib/session';
 import PassSheet from '../components/PassSheet.jsx';
 import SellSheet from '../components/SellSheet.jsx';
-import { clock, spacedPlate } from '../lib/verdict';
+import { clock, plateText } from '../lib/verdict';
 
 /*
  * The gate screen. One job: get from a vehicle at the barrier to a recorded
@@ -54,6 +54,7 @@ export default function Gate() {
   const [verified, setVerified] = useState([]);
   const [justNow, setJustNow] = useState(null); // ticket no. to highlight briefly
   const [selling, setSelling] = useState(null); // a pass being sold at the barrier
+  const [ending, setEnding] = useState(false);  // End shift, asked twice on purpose
   const searchRef = useRef(null);
 
   const load = useCallback(async ({ quiet = false } = {}) => {
@@ -187,7 +188,7 @@ export default function Gate() {
             <button type="button" onClick={() => setSelling('')} className="rounded-lg bg-white px-3 py-2 text-[13px] font-bold text-brand">
               Sell a pass
             </button>
-            <button type="button" onClick={signOut} className="rounded-lg border border-white/25 px-3 py-2 text-[13px] font-semibold">
+            <button type="button" onClick={() => setEnding(true)} className="rounded-lg border border-white/25 px-3 py-2 text-[13px] font-semibold">
               End shift
             </button>
           </div>
@@ -229,7 +230,7 @@ export default function Gate() {
                       ? 'border-pass-500/40 bg-pass-50'
                       : 'border-line bg-white'}`}>
                   <div className="min-w-0">
-                    <div className="plate text-[17px]">{spacedPlate(e.regNo)}</div>
+                    <div className="plate text-[17px]">{plateText(e.regNo)}</div>
                     <div className="truncate text-[13px] text-muted">
                       {e.sold ? `pass sold · ${e.sold}` : e.type || 'entry recorded'}
                       {e.note ? ` · ${e.note}` : ''}
@@ -278,7 +279,7 @@ export default function Gate() {
               <button type="button" onClick={() => setOpen({ ticketNo: p.ticketNo, typed: q.trim() || null })}
                 className="card flex w-full items-center gap-3 px-4 py-3.5 text-left active:scale-[.995]">
                 <div className="min-w-0 flex-1">
-                  <div className="plate text-[19px]">{spacedPlate(p.regNo)}</div>
+                  <div className="plate text-[19px]">{plateText(p.regNo)}</div>
                   <div className="truncate text-[13px] text-muted">
                     {p.slot?.label} · {p.category?.label}{p.visitor ? ` · ${p.visitor}` : ''}
                     {p.travelDate !== arrivals?.date ? ` · ${p.travelDate}` : ''}
@@ -295,6 +296,33 @@ export default function Gate() {
 
       {open && (
         <PassSheet ticketNo={open.ticketNo} typed={open.typed} onClose={closeSheet} onRecorded={onRecorded} />
+      )}
+
+      {/*
+        * End shift asks first.
+        *
+        * It sits a thumb's width from Sell a pass, on a phone held in one hand
+        * in the wind, and the cost of a mis-tap is a signed-out gate and a PIN
+        * to find again with vehicles waiting. So it is confirmed, and the button
+        * that confirms is not the one under the thumb.
+        */}
+      {ending && (
+        <div className="fixed inset-0 z-50 flex items-end bg-ink/50 backdrop-blur-[2px]" onClick={() => setEnding(false)}>
+          <div className="w-full rounded-t-3xl bg-white px-6 pb-8 pt-6" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-xl font-extrabold">End your shift?</h2>
+            <p className="mt-2 text-[15px] text-muted">
+              This gate stops recording entries until somebody signs in again with their mobile number and PIN.
+              {verified.length > 0 ? ` ${verified.length} vehicle${verified.length === 1 ? '' : 's'} verified on this phone will stay in Earlier checks.` : ''}
+            </p>
+            <button type="button" className="btn-quiet mt-5 w-full" onClick={() => setEnding(false)}>
+              No, stay on duty
+            </button>
+            <button type="button" className="btn mt-2 w-full bg-stop-500 py-3.5 text-[16px] font-bold text-white"
+              onClick={() => { setEnding(false); signOut(); }}>
+              Yes, end my shift
+            </button>
+          </div>
+        </div>
       )}
 
       {selling !== null && (

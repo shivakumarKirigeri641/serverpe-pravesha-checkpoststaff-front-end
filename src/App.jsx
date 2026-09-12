@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import Gate from './pages/Gate.jsx';
 import History from './pages/History.jsx';
+import Passes from './pages/Passes.jsx';
 import SignIn from './pages/SignIn.jsx';
 import { useSession } from './lib/session';
 
 /*
  * A gate phone is either on a shift or signing in to one. On a shift there are
- * two things to do — check the vehicle in front of you, and look up what was
- * checked earlier — so there is a bar at the bottom, where a thumb is, and no
- * router: a staff member should never be navigating a URL in the rain.
+ * three things to do — check the vehicle in front of you, look through the
+ * passes for a day, and look up what was checked earlier — so there is a bar at
+ * the bottom, where a thumb is, and no router: a staff member should never be
+ * navigating a URL in the rain.
  */
 export default function App() {
   const { state, me } = useSession();
@@ -29,11 +31,14 @@ export default function App() {
 
   return (
     <>
-      {tab === 'gate' ? <Gate /> : <History today={me?.serverDate} />}
+      {tab === 'gate' && <Gate />}
+      {tab === 'passes' && <Passes today={me?.serverDate} />}
+      {tab === 'history' && <History today={me?.serverDate} />}
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto flex max-w-lg">
-          <TabButton active={tab === 'gate'} onClick={() => setTab('gate')} label="Check a vehicle" icon={<GateIcon />} />
+          <TabButton active={tab === 'gate'} onClick={() => setTab('gate')} label="Check" icon={<GateIcon />} />
+          <TabButton active={tab === 'passes'} onClick={() => setTab('passes')} label="Passes" icon={<PassIcon />} />
           <TabButton active={tab === 'history'} onClick={() => setTab('history')} label="Earlier checks" icon={<HistoryIcon />} />
         </div>
       </nav>
@@ -51,4 +56,5 @@ const TabButton = ({ active, onClick, label, icon }) => (
 
 const svg = { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' };
 const GateIcon = () => (<svg {...svg}><path d="M3 20V9l9-4 9 4v11" /><path d="M3 20h18M9 20v-6h6v6" /></svg>);
+const PassIcon = () => (<svg {...svg}><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M3 10h18M7 14h5" /></svg>);
 const HistoryIcon = () => (<svg {...svg}><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 4v4h4" /><path d="M12 8v4l3 2" /></svg>);

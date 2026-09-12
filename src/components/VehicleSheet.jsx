@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
-import { clock, spacedPlate } from '../lib/verdict';
+import { clock, plateText } from '../lib/verdict';
 
 /*
  * One vehicle, everything this gate has seen of it.
@@ -45,7 +45,7 @@ export default function VehicleSheet({ regNo, today, onClose }) {
       <div className="max-h-[88vh] w-full overflow-y-auto rounded-t-3xl bg-white pb-8" onClick={(e) => e.stopPropagation()}>
         <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-line bg-white px-5 pb-3 pt-4">
           <div className="min-w-0">
-            <div className="plate text-[22px]">{spacedPlate(regNo)}</div>
+            <div className="plate text-[22px]">{plateText(regNo)}</div>
             {data?.vehicle && (
               <div className="truncate text-[13px] text-muted">
                 {[data.vehicle.maker, data.vehicle.model, data.vehicle.colour].filter(Boolean).join(' · ')}

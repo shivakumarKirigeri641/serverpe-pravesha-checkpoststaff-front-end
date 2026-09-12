@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
-import { spacedPlate } from '../lib/verdict';
+import { plateText } from '../lib/verdict';
 
 /*
  * Selling a pass at the barrier.
@@ -132,7 +132,7 @@ export default function SellSheet({ prefill, onClose, onSold }) {
           <div className="px-5 pt-5">
             <div className="rounded-2xl border border-pass-500/30 bg-pass-50 px-5 py-5 text-center">
               <div className="plate text-[26px] font-extrabold text-pass-700">{sold.ticketNo}</div>
-              <div className="mt-1 text-[15px]">{spacedPlate(sold.regNo)} · {sold.vehicleType}</div>
+              <div className="mt-1 text-[15px]">{plateText(sold.regNo)} · {sold.vehicleType}</div>
               <div className="text-[13px] text-muted">{sold.slot} · {sold.travelDate}</div>
               <div className="mt-3 text-[22px] font-extrabold">₹{sold.amount}</div>
               {sold.declared && <div className="mt-1 text-[13px] text-warn-700">Type declared at the gate{sold.noPlate ? ' · no number plate' : ''}</div>}
@@ -232,7 +232,7 @@ export default function SellSheet({ prefill, onClose, onSold }) {
           <div className="space-y-4 px-5 pt-4">
             <div className="rounded-xl border border-line px-4 py-3">
               <div className="flex items-baseline justify-between">
-                <div className="text-[15px] font-bold">{noPlate ? 'No number plate' : spacedPlate(regNo)}</div>
+                <div className="text-[15px] font-bold">{noPlate ? 'No number plate' : plateText(regNo)}</div>
                 <div className="text-[20px] font-extrabold">₹{price?.total ?? '—'}</div>
               </div>
               <div className="text-[13px] text-muted">

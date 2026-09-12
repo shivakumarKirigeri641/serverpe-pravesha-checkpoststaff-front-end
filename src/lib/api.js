@@ -96,6 +96,16 @@ export const api = {
     if (before) qs.set('before', before);
     return call(`/history?${qs}`);
   },
+  /* Every pass for a day — expected and entered — with who booked each one. */
+  passes: ({ date = null, status = '', q = '', limit = 50, offset = 0 } = {}) => {
+    const qs = new URLSearchParams();
+    if (date) qs.set('date', date);
+    if (status) qs.set('status', status);
+    if (q) qs.set('q', q);
+    qs.set('limit', String(limit));
+    if (offset) qs.set('offset', String(offset));
+    return call(`/passes?${qs}`);
+  },
   vehicle: (regNo) => call(`/vehicle/${encodeURIComponent(regNo)}`),
   onspotOptions: () => call('/onspot'),
   onspotLookup: (regNo) => call('/onspot/lookup', { method: 'POST', body: { regNo } }),

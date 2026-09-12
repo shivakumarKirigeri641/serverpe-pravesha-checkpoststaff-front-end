@@ -38,7 +38,13 @@ export const clock = (iso) => {
 };
 
 /** 'KA31N8147' → 'KA 31 N 8147', which is how a plate is read aloud. */
-export const spacedPlate = (reg) => {
-  const m = /^([A-Z]{2})(\d{1,2})([A-Z]{0,3})(\d{1,4})$/.exec(String(reg || '').toUpperCase());
-  return m ? [m[1], m[2], m[3], m[4]].filter(Boolean).join(' ') : String(reg || '');
-};
+/*
+ * A number plate as it is written on the vehicle: no spaces.
+ *
+ * It used to be grouped — KA 31 N 8147 — which reads nicely in print and badly
+ * at a barrier: staff compare what is on screen with the metal in front of them
+ * character by character, and inserted spaces are one more difference to
+ * discount while a queue waits. The plate is shown the way it was typed and the
+ * way it is stored.
+ */
+export const plateText = (reg) => String(reg || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
