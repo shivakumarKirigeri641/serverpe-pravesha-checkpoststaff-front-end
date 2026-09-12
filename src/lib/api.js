@@ -110,4 +110,18 @@ export const api = {
   onspotOptions: () => call('/onspot'),
   onspotLookup: (regNo) => call('/onspot/lookup', { method: 'POST', body: { regNo } }),
   onspotSell: (body) => call('/onspot', { method: 'POST', body }),
+  /* A photograph, already shrunk by the phone. Given longer than the rest: it is
+     a few hundred kilobytes going up from a hill. */
+  uploadPhoto: ({ kind, image, width, height, note = null }) =>
+    call('/photo', { method: 'POST', body: { kind, image, width, height, note }, timeoutMs: 45000 }),
+  /* The bytes of one, fetched with the shift's token: an <img src> cannot carry
+     an Authorization header, so the caller shows it from a blob URL. */
+  photoBlob: async (id) => {
+    const token = getToken();
+    const res = await fetch(`${P}/photo/${encodeURIComponent(id)}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error('That photograph could not be loaded.');
+    return URL.createObjectURL(await res.blob());
+  },
 };

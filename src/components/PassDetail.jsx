@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import Photos from './Photos.jsx';
 import { clock, plateText } from '../lib/verdict';
 
 /*
@@ -79,6 +80,15 @@ export default function PassDetail({ pass, onClose }) {
             <Row label="Reference" value={p.paid?.reference} mono />
             <Row label="Paid at" value={p.paid?.at ? clock(p.paid.at) : null} />
           </Group>
+
+          {p.photos?.length > 0 && (
+            <section>
+              <h3 className="mb-1.5 text-[12px] font-bold uppercase tracking-wide text-muted">
+                Photographs taken at the sale
+              </h3>
+              <Photos photos={p.photos} />
+            </section>
+          )}
 
           <Group title="At this gate">
             {entered

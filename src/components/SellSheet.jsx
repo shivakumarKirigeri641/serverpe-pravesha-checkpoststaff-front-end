@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
+import Camera from './Camera.jsx';
 import { plateText } from '../lib/verdict';
 
 /*
@@ -20,6 +21,14 @@ import { plateText } from '../lib/verdict';
  * invoice. Then we need something to write down: a chassis number, or the
  * driver's name and phone. The pass gets an identifier of our own so that one
  * vehicle still gets one pass a day.
+ *
+ * WHAT THE CAMERA IS FOR. Two things here can only be typed, and anything typed
+ * can be mistyped. A UPI reference read off a visitor's screen is indistinguish-
+ * able from a payment that never happened until the reconciliation fails a week
+ * later, and a vehicle with no plate is described entirely by a chassis number
+ * somebody squinted at. A photograph settles both, so there is one offered
+ * beside the UPI reference and one required for a vehicle with no plate. It is
+ * uploaded as it is taken, not with the sale.
  */
 
 const TYPE_ICON = { BIKE: '🏍️', CAR: '🚗', TOOFAN: '🚙', TT: '🚐' };
@@ -45,6 +54,7 @@ export default function SellSheet({ prefill, onClose, onSold }) {
   const [method, setMethod] = useState('cash');
   const [reference, setReference] = useState('');
   const [recordEntry, setRecordEntry] = useState(true);
+  const [photos, setPhotos] = useState([]);            // uploaded already, ids only
   const [sold, setSold] = useState(null);
 
   useEffect(() => {
@@ -91,6 +101,7 @@ export default function SellSheet({ prefill, onClose, onSold }) {
         name: name.trim() || null,
         paymentMethod: method,
         paymentReference: reference.trim() || null,
+        photoIds: photos.map((p) => p.id),
         recordEntry,
       });
       setSold(out.ticket);
@@ -109,7 +120,12 @@ export default function SellSheet({ prefill, onClose, onSold }) {
   const vehicleReady = (noPlate || /^[A-Z0-9]{5,11}$/.test(regNo))
     && Boolean(chosenType)
     && (!unverified || identityNote.trim().length >= (identityRule?.min || 4));
-  const payReady = /^\d{10}$/.test(mobile) && Boolean(slotId) && (method === 'cash' || reference.trim().length >= 4);
+  const vehicleShots = photos.filter((p) => p.kind === 'vehicle');
+  const payReady = /^\d{10}$/.test(mobile) && Boolean(slotId)
+    && (method === 'cash' || reference.trim().length >= 4)
+    /* No plate: the photograph is the only description of the vehicle that
+       cannot have been mistyped, so the sale waits for it. */
+    && (!noPlate || vehicleShots.length > 0);
 
   return (
     <div className="fixed inset-0 z-40 flex items-end bg-ink/40" onClick={busy ? undefined : onClose}>
@@ -224,6 +240,14 @@ export default function SellSheet({ prefill, onClose, onSold }) {
               </div>
             )}
 
+            {noPlate && (
+              <Camera
+                kind="vehicle" required
+                label="Photograph of the vehicle"
+                hint="The whole vehicle from the front, close enough to read anything written on it. With no number plate this is the only record of what came through that nobody typed."
+                photos={photos} onChange={setPhotos} />
+            )}
+
             <button type="button" className="btn-primary w-full" disabled={!vehicleReady} onClick={() => setStep('pay')}>
               Continue
             </button>
@@ -294,9 +318,18 @@ export default function SellSheet({ prefill, onClose, onSold }) {
             </div>
 
             {method !== 'cash' && (
-              <div>
-                <label className="label" htmlFor="sell-ref">{method === 'upi' ? 'UPI reference' : 'Card slip number'}</label>
-                <input id="sell-ref" className="field" value={reference} onChange={(e) => setReference(e.target.value.trim())} />
+              <div className="space-y-3">
+                <div>
+                  <label className="label" htmlFor="sell-ref">{method === 'upi' ? 'UPI reference' : 'Card slip number'}</label>
+                  <input id="sell-ref" className="field" value={reference} onChange={(e) => setReference(e.target.value.trim())} />
+                </div>
+                <Camera
+                  kind="upi"
+                  label={method === 'upi' ? 'Photograph of the payment screen' : 'Photograph of the card slip'}
+                  hint={method === 'upi'
+                    ? 'Worth taking. A reference typed from somebody else’s screen is easy to get wrong, and this is what settles it if the payment cannot be found later.'
+                    : 'Worth taking, so the slip number can be checked against the settlement later.'}
+                  photos={photos} onChange={setPhotos} />
               </div>
             )}
 
@@ -308,6 +341,12 @@ export default function SellSheet({ prefill, onClose, onSold }) {
             {remaining !== null && remaining <= 0 && (
               <p className="rounded-xl border border-stop-500/25 bg-stop-50 px-4 py-3 text-[14px] text-stop-700">
                 That slot is full for this vehicle type.
+              </p>
+            )}
+
+            {noPlate && vehicleShots.length === 0 && (
+              <p className="rounded-xl border border-warn-500/25 bg-warn-50 px-4 py-3 text-[14px] text-warn-700">
+                Go back and photograph the vehicle. With no number plate, a pass cannot be issued without it.
               </p>
             )}
 
