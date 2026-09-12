@@ -89,4 +89,12 @@ export const api = {
   entry: (ticketNo, { override = false, typed = null, elapsedMs = null } = {}) =>
     call('/entry', { method: 'POST', body: { ticketNo, override, typed, elapsedMs } }),
   recent: () => call('/recent'),
+  history: ({ q = '', verdict = '', before = null, limit = 30 } = {}) => {
+    const qs = new URLSearchParams({ limit: String(limit) });
+    if (q) qs.set('q', q);
+    if (verdict) qs.set('verdict', verdict);
+    if (before) qs.set('before', before);
+    return call(`/history?${qs}`);
+  },
+  vehicle: (regNo) => call(`/vehicle/${encodeURIComponent(regNo)}`),
 };

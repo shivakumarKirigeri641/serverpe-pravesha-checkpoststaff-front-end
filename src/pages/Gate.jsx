@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { useSession } from '../lib/session';
 import PassSheet from '../components/PassSheet.jsx';
@@ -11,6 +11,14 @@ import { clock, spacedPlate } from '../lib/verdict';
  * TYPING THE PLATE COMES FIRST, because staff can read it off the vehicle
  * without the visitor doing anything. Four digits are enough — the search
  * matches the end of the plate, which is how people read them out.
+ *
+ * SUGGESTIONS ARE INSTANT. Today's expected vehicles are already on the phone,
+ * so the first character filters them with no network at all — at a barrier,
+ * waiting 300ms for a server to answer what the device already knows is the
+ * difference between one tap and a queue. The server is still asked, a moment
+ * later, for anything not in today's list (yesterday's pass, another date), and
+ * those results are added underneath. Nothing is approved by typing: a pass is
+ * opened, validated, and only then recorded.
  *
  * THE LIST UNDERNEATH is today's expected vehicles, so a staff member can also
  * work by finding the visitor rather than typing. Pending first; the ones
@@ -52,6 +60,31 @@ export default function Gate() {
     return () => { clearInterval(id); document.removeEventListener('visibilitychange', onShow); };
   }, [load, open]);
 
+  /*
+   * What the phone can answer by itself: today's arrivals, filtered as they
+   * type. Exact plate first, then plates ending in what was typed — the way a
+   * number is read out — then anything containing it, then pass numbers.
+   */
+  const typed = q.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const suggestions = useMemo(() => {
+    if (!typed) return null;
+    const rank = (p) => {
+      const plate = String(p.regNo || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (plate === typed) return 0;
+      if (plate.endsWith(typed)) return 1;
+      if (plate.includes(typed)) return 2;
+      if (String(p.ticketNo || '').toUpperCase().includes(typed)) return 3;
+      return 99;
+    };
+    return (arrivals?.passes || [])
+      .map((p) => ({ p, r: rank(p) }))
+      .filter((x) => x.r < 99)
+      .sort((a, b) => a.r - b.r
+        || (a.p.status === 'used') - (b.p.status === 'used')
+        || String(a.p.regNo).localeCompare(String(b.p.regNo)))
+      .map((x) => x.p);
+  }, [typed, arrivals]);
+
   /* Search as they type, once the query is worth sending. */
   useEffect(() => {
     const term = q.trim();
@@ -85,12 +118,21 @@ export default function Gate() {
   };
 
   const totals = arrivals?.totals;
-  const list = results !== null
-    ? results
+
+  /* What is on the phone, then whatever the server adds that is not already
+     there — so the list never jumps about as the answer arrives. */
+  const merged = () => {
+    const seen = new Set((suggestions || []).map((p) => p.ticketNo));
+    const extra = (results || []).filter((p) => !seen.has(p.ticketNo));
+    return [...(suggestions || []), ...extra];
+  };
+  const searchingNow = typed.length > 0;
+  const list = searchingNow
+    ? merged()
     : (arrivals?.passes || []).filter((p) => (tab === 'pending' ? p.status !== 'used' : p.status === 'used'));
 
   return (
-    <div className="min-h-screen pb-10">
+    <div className="min-h-screen pb-24">
       <header className="sticky top-0 z-20 bg-brand text-white shadow-soft">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
           <div className="min-w-0">
@@ -122,9 +164,8 @@ export default function Gate() {
             onChange={(e) => setQ(e.target.value)}
           />
           <p className="mt-1.5 px-1 text-[13px] text-muted">
-            {searching ? 'Searching…'
-              : results !== null ? `${results.length} match${results.length === 1 ? '' : 'es'}`
-              : 'Type the last 4 digits of the number plate.'}
+            {!searchingNow ? 'Type the last 4 digits of the number plate.'
+              : `${list.length} match${list.length === 1 ? '' : 'es'}${searching ? ' · still looking' : ''}`}
           </p>
         </div>
 
@@ -144,7 +185,7 @@ export default function Gate() {
           <p className="mb-3 rounded-xl border border-stop-500/25 bg-stop-50 px-4 py-3 text-[15px] text-stop-700">{error}</p>
         )}
 
-        {results === null && (
+        {!searchingNow && (
           <div className="mb-3 flex gap-2">
             <Tab active={tab === 'pending'} onClick={() => setTab('pending')} label={`Still to come (${totals?.pending ?? 0})`} />
             <Tab active={tab === 'entered'} onClick={() => setTab('entered')} label={`Entered (${totals?.entered ?? 0})`} />
@@ -155,7 +196,7 @@ export default function Gate() {
 
         {arrivals && list.length === 0 && (
           <p className="card px-5 py-10 text-center text-[15px] text-muted">
-            {results !== null
+            {searchingNow
               ? 'No pass found for that number. Check the digits, or ask the visitor for their pass number.'
               : tab === 'pending' ? 'Every booked vehicle has come through.' : 'No entries recorded yet.'}
           </p>
