@@ -25,6 +25,19 @@ import { clock, spacedPlate } from '../lib/verdict';
  * work by finding the visitor rather than typing. Pending first; the ones
  * already through move to their own tab and stop cluttering the queue.
  *
+ * WHAT HAS BEEN VERIFIED STAYS ON SCREEN. Every entry recorded on this phone
+ * during this shift stacks up under the search box, newest first, with the time
+ * it went through. It used to be a single ribbon with a Clear button — which
+ * meant the record of a check survived only until somebody tidied it away, and
+ * asked a staff member to do housekeeping with a queue waiting. Nothing here
+ * needs dismissing now: the newest line is simply highlighted for a few seconds
+ * and then settles into the list. Checks from earlier shifts and other days are
+ * one tap away under Earlier checks.
+ *
+ * THE KEYBOARD COMES STRAIGHT BACK. A recorded entry closes its own sheet and
+ * returns the cursor to an empty search box, so the next plate can be typed
+ * without touching anything else.
+ *
  * IT REFRESHES ON ITS OWN, quietly, because a second phone or the other gate may
  * have recorded an entry since this screen was drawn.
  */
@@ -37,7 +50,9 @@ export default function Gate() {
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState(null);
   const [open, setOpen] = useState(null);       // { ticketNo, typed }
-  const [flash, setFlash] = useState(null);     // last recorded entry, shown as a ribbon
+  /* Everything verified on this phone this shift, newest first. */
+  const [verified, setVerified] = useState([]);
+  const [justNow, setJustNow] = useState(null); // ticket no. to highlight briefly
   const [selling, setSelling] = useState(null); // a pass being sold at the barrier
   const searchRef = useRef(null);
 
@@ -107,16 +122,41 @@ export default function Gate() {
     return () => clearTimeout(id);
   }, [q]);
 
+  /* Newest first, and never twice: re-checking a pass moves its line, it does
+     not add another. */
+  const remember = (entry) => {
+    setVerified((list) => [entry, ...list.filter((x) => x.ticketNo !== entry.ticketNo)].slice(0, 60));
+    setJustNow(entry.ticketNo);
+  };
+
   const onRecorded = (out) => {
-    setFlash({ regNo: out.pass?.regNo, at: out.usedAt, override: out.verdict === 'valid_override' });
+    remember({
+      ticketNo: out.pass?.ticketNo || out.ticketNo,
+      regNo: out.pass?.regNo,
+      at: out.usedAt,
+      note: out.verdict === 'valid_override' ? 'allowed outside slot' : null,
+      type: out.pass?.category?.label || null,
+    });
     load({ quiet: true });
   };
 
+  /* The highlight fades by itself. The line stays. */
+  useEffect(() => {
+    if (!justNow) return undefined;
+    const id = setTimeout(() => setJustNow(null), 6000);
+    return () => clearTimeout(id);
+  }, [justNow]);
+
+  /*
+   * Back to the search box, empty, with the cursor in it — the next vehicle is
+   * already at the barrier. Called whichever way the sheet closed.
+   */
   const closeSheet = () => {
     setOpen(null);
     setQ('');
     setResults(null);
-    searchRef.current?.focus();
+    /* After the sheet unmounts, or the focus lands on a node about to go away. */
+    requestAnimationFrame(() => searchRef.current?.focus());
   };
 
   const totals = arrivals?.totals;
@@ -176,16 +216,32 @@ export default function Gate() {
           </p>
         </div>
 
-        {flash && (
-          <div className="mb-3 flex items-center justify-between rounded-xl border border-pass-500/25 bg-pass-50 px-4 py-3">
-            <div>
-              <div className="text-[15px] font-bold text-pass-700">
-                {spacedPlate(flash.regNo)} {flash.sold ? `sold — ${flash.sold}` : `recorded${flash.override ? ' (allowed)' : ''}`}
-              </div>
-              <div className="text-[13px] text-muted">{flash.at ? `at ${clock(flash.at)}` : 'pass issued'}</div>
-            </div>
-            <button type="button" onClick={() => setFlash(null)} className="text-[13px] font-semibold text-muted">Clear</button>
-          </div>
+        {verified.length > 0 && !searchingNow && (
+          <section className="mb-4">
+            <h2 className="mb-2 px-1 text-[12px] font-bold uppercase tracking-wide text-muted">
+              Verified this shift · {verified.length}
+            </h2>
+            <ul className="space-y-1.5">
+              {verified.map((e) => (
+                <li key={e.ticketNo}
+                  className={`flex items-center justify-between rounded-xl border px-4 py-2.5 transition-colors duration-500 ${
+                    e.ticketNo === justNow
+                      ? 'border-pass-500/40 bg-pass-50'
+                      : 'border-line bg-white'}`}>
+                  <div className="min-w-0">
+                    <div className="plate text-[17px]">{spacedPlate(e.regNo)}</div>
+                    <div className="truncate text-[13px] text-muted">
+                      {e.sold ? `pass sold · ${e.sold}` : e.type || 'entry recorded'}
+                      {e.note ? ` · ${e.note}` : ''}
+                    </div>
+                  </div>
+                  <span className="shrink-0 text-[13px] font-semibold text-pass-700">
+                    {e.at ? clock(e.at) : 'in'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
         {error && (
@@ -244,8 +300,8 @@ export default function Gate() {
       {selling !== null && (
         <SellSheet
           prefill={selling}
-          onClose={() => { setSelling(null); setQ(''); load({ quiet: true }); }}
-          onSold={(t) => setFlash({ regNo: t.regNo, at: t.enteredAt, sold: t.ticketNo })}
+          onClose={() => { setSelling(null); setQ(''); load({ quiet: true }); requestAnimationFrame(() => searchRef.current?.focus()); }}
+          onSold={(t) => remember({ ticketNo: t.ticketNo, regNo: t.regNo, at: t.enteredAt, sold: t.ticketNo, type: t.vehicleType || null })}
         />
       )}
     </div>

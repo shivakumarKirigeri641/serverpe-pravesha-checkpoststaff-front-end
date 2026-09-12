@@ -47,6 +47,24 @@ export default function PassSheet({ ticketNo, typed, onClose, onRecorded }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  /*
+   * A recorded entry does not wait to be dismissed.
+   *
+   * The old flow asked for one more tap — "Next vehicle" — after the pass was
+   * already stamped. At a barrier with cars behind, that tap is the queue: the
+   * staff member has looked up, waved the vehicle through, and the phone is
+   * still showing a screen about a car that has driven off. So the green state
+   * is held just long enough to be seen, then the sheet closes on its own and
+   * the gate screen takes the keyboard back for the next number plate.
+   *
+   * A refusal never auto-closes: that one needs reading.
+   */
+  useEffect(() => {
+    if (!result?.ok) return undefined;
+    const id = setTimeout(() => onClose(), 1100);
+    return () => clearTimeout(id);
+  }, [result, onClose]);
+
   async function record(override = false) {
     setBusy(true); setError(null);
     try {
@@ -136,7 +154,7 @@ export default function PassSheet({ ticketNo, typed, onClose, onRecorded }) {
                 </button>
               )}
               <button type="button" className={done ? 'btn-primary w-full' : 'btn-quiet w-full'} onClick={onClose}>
-                {done ? 'Next vehicle' : needsOverride ? 'Do not allow' : 'Close'}
+                {done ? 'Next vehicle now' : needsOverride ? 'Do not allow' : 'Close'}
               </button>
             </div>
           </>
