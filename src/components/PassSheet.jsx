@@ -91,7 +91,11 @@ export default function PassSheet({ ticketNo, typed, onClose, onRecorded }) {
      the staff member is being asked, so the amber button must be there the first
      time they open the pass — not only after a refused attempt. */
   const needsOverride = !done && shown.verdict === 'wrong_slot' && shown.blocking !== true;
-  const canRecord = !done && (shown.verdict === 'valid' || needsOverride);
+  /* A pass the visitor checked in themselves is already marked used, but it has
+     never been seen by anybody here. Confirming it is not a second entry: it
+     replaces their word with yours. */
+  const selfDeclared = !done && shown.verdict === 'self_declared';
+  const canRecord = !done && (shown.verdict === 'valid' || needsOverride || selfDeclared);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/50 backdrop-blur-[2px]" onClick={onClose}>
@@ -150,7 +154,10 @@ export default function PassSheet({ ticketNo, typed, onClose, onRecorded }) {
               {canRecord && (
                 <button type="button" className={needsOverride ? 'btn w-full bg-ask-500 py-4 text-[17px] text-white' : 'btn-go w-full'}
                   disabled={busy} onClick={() => record(needsOverride)}>
-                  {busy ? 'Recording…' : needsOverride ? 'Allow and record entry' : 'Record entry'}
+                  {busy ? 'Recording…'
+                    : needsOverride ? 'Allow and record entry'
+                      : selfDeclared ? 'Vehicle checked — confirm entry'
+                        : 'Record entry'}
                 </button>
               )}
               <button type="button" className={done ? 'btn-primary w-full' : 'btn-quiet w-full'} onClick={onClose}>

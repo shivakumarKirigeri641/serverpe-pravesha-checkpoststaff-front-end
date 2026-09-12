@@ -17,6 +17,11 @@ export const VERDICTS = {
   cancelled: { tone: 'stop', title: 'Cancelled', action: 'This pass was cancelled and is not valid.' },
   unknown_ticket: { tone: 'stop', title: 'No such pass', action: 'Check the number, or search by the vehicle number.' },
   wrong_slot: { tone: 'ask', title: 'Outside their slot', action: 'Your decision. Recording it will note that you allowed it.' },
+  /* The visitor ticked "I am already at the checkpost" when paying, and their
+     phone agreed they were standing here. Nobody has seen the vehicle yet, so
+     this is not an entry to refuse — it is one to check. */
+  self_declared: { tone: 'ask', title: 'They checked themselves in',
+    action: 'Recorded by the visitor when paying. Check the vehicle, then confirm.' },
 };
 
 export const verdictOf = (v) => VERDICTS[v] || { tone: 'stop', title: 'Not valid', action: 'Ask them to check their pass.' };
