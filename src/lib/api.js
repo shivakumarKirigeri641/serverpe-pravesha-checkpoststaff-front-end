@@ -97,4 +97,7 @@ export const api = {
     return call(`/history?${qs}`);
   },
   vehicle: (regNo) => call(`/vehicle/${encodeURIComponent(regNo)}`),
+  onspotOptions: () => call('/onspot'),
+  onspotLookup: (regNo) => call('/onspot/lookup', { method: 'POST', body: { regNo } }),
+  onspotSell: (body) => call('/onspot', { method: 'POST', body }),
 };

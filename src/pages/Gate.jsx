@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { useSession } from '../lib/session';
 import PassSheet from '../components/PassSheet.jsx';
+import SellSheet from '../components/SellSheet.jsx';
 import { clock, spacedPlate } from '../lib/verdict';
 
 /*
@@ -37,6 +38,7 @@ export default function Gate() {
   const [error, setError] = useState(null);
   const [open, setOpen] = useState(null);       // { ticketNo, typed }
   const [flash, setFlash] = useState(null);     // last recorded entry, shown as a ribbon
+  const [selling, setSelling] = useState(null); // a pass being sold at the barrier
   const searchRef = useRef(null);
 
   const load = useCallback(async ({ quiet = false } = {}) => {
@@ -141,9 +143,14 @@ export default function Gate() {
               {me?.staff?.name} · on duty · {me?.serverDate}
             </div>
           </div>
-          <button type="button" onClick={signOut} className="shrink-0 rounded-lg border border-white/25 px-3 py-2 text-[13px] font-semibold">
-            End shift
-          </button>
+          <div className="flex shrink-0 gap-2">
+            <button type="button" onClick={() => setSelling('')} className="rounded-lg bg-white px-3 py-2 text-[13px] font-bold text-brand">
+              Sell a pass
+            </button>
+            <button type="button" onClick={signOut} className="rounded-lg border border-white/25 px-3 py-2 text-[13px] font-semibold">
+              End shift
+            </button>
+          </div>
         </div>
 
         {totals && (
@@ -173,9 +180,9 @@ export default function Gate() {
           <div className="mb-3 flex items-center justify-between rounded-xl border border-pass-500/25 bg-pass-50 px-4 py-3">
             <div>
               <div className="text-[15px] font-bold text-pass-700">
-                {spacedPlate(flash.regNo)} recorded{flash.override ? ' (allowed)' : ''}
+                {spacedPlate(flash.regNo)} {flash.sold ? `sold — ${flash.sold}` : `recorded${flash.override ? ' (allowed)' : ''}`}
               </div>
-              <div className="text-[13px] text-muted">at {clock(flash.at)}</div>
+              <div className="text-[13px] text-muted">{flash.at ? `at ${clock(flash.at)}` : 'pass issued'}</div>
             </div>
             <button type="button" onClick={() => setFlash(null)} className="text-[13px] font-semibold text-muted">Clear</button>
           </div>
@@ -195,11 +202,18 @@ export default function Gate() {
         {!arrivals && !error && <p className="py-10 text-center text-muted">Loading today&rsquo;s passes…</p>}
 
         {arrivals && list.length === 0 && (
-          <p className="card px-5 py-10 text-center text-[15px] text-muted">
-            {searchingNow
-              ? 'No pass found for that number. Check the digits, or ask the visitor for their pass number.'
-              : tab === 'pending' ? 'Every booked vehicle has come through.' : 'No entries recorded yet.'}
-          </p>
+          <div className="card px-5 py-8 text-center">
+            <p className="text-[15px] text-muted">
+              {searchingNow
+                ? 'No pass found for that number. Check the digits, or ask the visitor for their pass number.'
+                : tab === 'pending' ? 'Every booked vehicle has come through.' : 'No entries recorded yet.'}
+            </p>
+            {searchingNow && (
+              <button type="button" className="btn-primary mt-4 w-full" onClick={() => setSelling(typed)}>
+                Sell a pass for this vehicle
+              </button>
+            )}
+          </div>
         )}
 
         <ul className="space-y-2">
@@ -225,6 +239,14 @@ export default function Gate() {
 
       {open && (
         <PassSheet ticketNo={open.ticketNo} typed={open.typed} onClose={closeSheet} onRecorded={onRecorded} />
+      )}
+
+      {selling !== null && (
+        <SellSheet
+          prefill={selling}
+          onClose={() => { setSelling(null); setQ(''); load({ quiet: true }); }}
+          onSold={(t) => setFlash({ regNo: t.regNo, at: t.enteredAt, sold: t.ticketNo })}
+        />
       )}
     </div>
   );
