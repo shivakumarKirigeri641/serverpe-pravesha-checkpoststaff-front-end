@@ -74,6 +74,15 @@ async function call(path, { method = 'GET', body, auth = true, timeoutMs = 12000
 }
 
 export const api = {
+  /* Ask for a 4-digit code. Refusals are answers, not failures: the screen shows
+     the sentence the server chose, in both languages. */
+  requestCode: (mobile) =>
+    call('/session/otp', { method: 'POST', auth: false, body: { mobile } })
+      .catch((e) => { if (e.body) return e.body; throw e; }),
+  signInWithCode: (mobile, code, checkpostId) =>
+    call('/session/verify', { method: 'POST', auth: false, body: { mobile, code, checkpostId } })
+      .catch((e) => { if (e.body) return e.body; throw e; }),
+
   signIn: (mobile, pin, checkpostId) =>
     call('/session', { method: 'POST', auth: false, body: { mobile, pin, checkpostId } })
       .catch((e) => {

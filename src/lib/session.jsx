@@ -32,6 +32,20 @@ export function SessionProvider({ children }) {
     setEndedNotice('Your shift has ended. Please sign in again.');
   }), []);
 
+  /* A code to the staff member's own phone. Nothing is stored until it works. */
+  const requestCode = useCallback((mobile) => api.requestCode(mobile), []);
+
+  const signInWithCode = useCallback(async (mobile, code, checkpostId) => {
+    const out = await api.signInWithCode(mobile, code, checkpostId);
+    if (out.ok) {
+      setToken(out.token);
+      setMe(out);
+      setState('ready');
+      setEndedNotice(null);
+    }
+    return out;
+  }, []);
+
   const signIn = useCallback(async (mobile, pin, checkpostId) => {
     const out = await api.signIn(mobile, pin, checkpostId);
     if (out.ok) {
@@ -51,7 +65,10 @@ export function SessionProvider({ children }) {
     setEndedNotice(null);
   }, []);
 
-  const value = useMemo(() => ({ me, state, signIn, signOut, endedNotice }), [me, state, signIn, signOut, endedNotice]);
+  const value = useMemo(
+    () => ({ me, state, signIn, signInWithCode, requestCode, signOut, endedNotice }),
+    [me, state, signIn, signInWithCode, requestCode, signOut, endedNotice],
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
