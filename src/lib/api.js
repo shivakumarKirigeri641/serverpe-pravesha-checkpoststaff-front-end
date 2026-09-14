@@ -100,11 +100,6 @@ export const api = {
   pass: (ticketNo) => call(`/pass/${encodeURIComponent(ticketNo)}`),
   entry: (ticketNo, { override = false, typed = null, elapsedMs = null } = {}) =>
     call('/entry', { method: 'POST', body: { ticketNo, override, typed, elapsedMs } }),
-  /* Take back an entry recorded a moment ago. A refusal (too late, not yours)
-     is an answer to show, not an error to throw. */
-  undoEntry: (ticketNo, reason) =>
-    call('/entry/undo', { method: 'POST', body: { ticketNo, reason } })
-      .catch((e) => { if (e.body && e.body.code) return e.body; throw e; }),
   recent: () => call('/recent'),
   history: ({ q = '', verdict = '', before = null, limit = 30 } = {}) => {
     const qs = new URLSearchParams({ limit: String(limit) });

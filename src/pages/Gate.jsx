@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { useSession } from '../lib/session';
-import { LangToggle, english, useT } from '../lib/i18n.jsx';
+import { LangToggle, useT } from '../lib/i18n.jsx';
 import { setSoundOn, soundOn } from '../lib/feedback';
-import { dismissProblem, saveArrivals, savedArrivals, sendNow, subscribe, unqueue } from '../lib/offline';
+import { dismissProblem, saveArrivals, savedArrivals, sendNow, subscribe } from '../lib/offline';
 import { batteryWarning, useBattery, useDaylight, useWakeLock } from '../lib/device';
-import { signal } from '../lib/feedback';
-import ConvoyCard from '../components/ConvoyCard.jsx';
 import PassSheet from '../components/PassSheet.jsx';
 import SellSheet from '../components/SellSheet.jsx';
 import { clock, plateText } from '../lib/verdict';
@@ -79,35 +77,7 @@ export default function Gate() {
   const lowBattery = batteryWarning(battery);
   const daylight = useDaylight();
 
-  /*
-   * UNDO, FOR A MINUTE.
-   *
-   * The last entry recorded on this phone can be taken back for sixty seconds —
-   * the wrong pass opened, a thumb on the green button by mistake. The visitor's
-   * WhatsApp confirmation waits for the same minute, so an undone entry never
-   * tells anybody they arrived. After that it is the office's to correct.
-   */
-  const UNDO_SECONDS = 60;
-  const [lastEntry, setLastEntry] = useState(null);   // { ticketNo, regNo, offline, at }
-  const [undoAsk, setUndoAsk] = useState(false);
-  const [undoBusy, setUndoBusy] = useState(false);
-  const [notice, setNotice] = useState(null);         // { tone, text }
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    if (!lastEntry) return undefined;
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [lastEntry]);
-  const undoLeft = lastEntry ? Math.min(UNDO_SECONDS, Math.max(0, UNDO_SECONDS - Math.floor((now - lastEntry.at) / 1000))) : 0;
-  useEffect(() => { if (lastEntry && undoLeft === 0 && !undoBusy) { setLastEntry(null); setUndoAsk(false); } }, [undoLeft, lastEntry, undoBusy]);
-  useEffect(() => {
-    if (!notice) return undefined;
-    const id = setTimeout(() => setNotice(null), 6000);
-    return () => clearTimeout(id);
-  }, [notice]);
 
-  /* The rest of a convoy, once its first vehicle is through. */
-  const [convoy, setConvoy] = useState(null);         // { group, passes }
 
   const load = useCallback(async ({ quiet = false } = {}) => {
     try {
@@ -241,54 +211,10 @@ export default function Gate() {
       saved: Boolean(out.offline),
       type: out.pass?.category?.label || null,
     });
-    setLastEntry({ ticketNo: out.pass?.ticketNo || out.ticketNo, regNo: out.pass?.regNo, offline: Boolean(out.offline), at: Date.now() });
-    setNow(Date.now());
-    setUndoAsk(false);
     load({ quiet: true });
   };
 
-  /* An entry from the pass sheet: the same, and the start of a convoy if the
-     visitor has other vehicles expected today. */
-  const onSheetRecorded = (out) => {
-    onRecorded(out);
-    const ticketNo = out.pass?.ticketNo || out.ticketNo;
-    const me = (arrivals?.passes || []).find((p) => p.ticketNo === ticketNo);
-    if (!me?.group || (convoy && convoy.group === me.group)) return;
-    const others = arrivals.passes.filter((p) => p.group === me.group && p.ticketNo !== ticketNo
-      && p.status !== 'used' && p.travelDate === arrivals.date);
-    setConvoy(others.length ? { group: me.group, passes: others } : null);
-  };
 
-  async function undoLast(reason) {
-    const e = lastEntry;
-    if (!e) return;
-    setUndoBusy(true);
-    try {
-      /* Still on the phone: it never reached the server, so taking it off the
-         phone is the whole undo. */
-      if (!unqueue(e.ticketNo)) {
-        const out = await api.undoEntry(e.ticketNo, reason);
-        if (!out.ok) {
-          signal('stop');
-          setNotice({ tone: 'stop', text: out.message });
-          setUndoAsk(false);
-          if (out.code === 'too_late' || out.code === 'not_yours') setLastEntry(null);
-          return;
-        }
-      }
-      signal('ask');
-      setVerified((list) => list.filter((x) => x.ticketNo !== e.ticketNo));
-      setLastEntry(null);
-      setUndoAsk(false);
-      setNotice({ tone: 'good', text: t('undoneOk', { plate: plateText(e.regNo) }) });
-      load({ quiet: true });
-    } catch (err) {
-      signal('stop');
-      setNotice({ tone: 'stop', text: err.message });
-    } finally {
-      setUndoBusy(false);
-    }
-  }
 
   /* The highlight fades by itself. The line stays. */
   useEffect(() => {
@@ -455,23 +381,7 @@ export default function Gate() {
           </div>
         )}
 
-        {notice && (
-          <div role="status" className={`mb-3 animate-rise rounded-xl border px-4 py-3 text-[15px] font-semibold ${
-            notice.tone === 'good' ? 'border-pass-500/40 bg-pass-50 text-pass-700' : 'border-stop-500/40 bg-stop-50 text-stop-700'}`}>
-            {notice.text}
-          </div>
-        )}
 
-        {convoy && (
-          <ConvoyCard key={convoy.group}
-            passes={convoy.passes}
-            usedNow={new Set((arrivals?.passes || []).filter((p) => p.status === 'used').map((p) => p.ticketNo))}
-            offline={offline}
-            onOpen={(p) => setOpen({ ticketNo: p.ticketNo, typed: null, pass: p })}
-            onAdmitted={onRecorded}
-            onDismiss={() => setConvoy(null)}
-          />
-        )}
 
         {offline && arrivals?.fromPhone && (
           <div className="mb-3 rounded-xl border border-ask-500/30 bg-ask-50 px-4 py-3 text-ask-700">
@@ -624,50 +534,10 @@ export default function Gate() {
         )}
       </main>
 
-      {/* The last entry, with a minute to take it back. Held at the bottom, clear
-          of the search box, where a thumb already rests. */}
-      {lastEntry && undoLeft > 0 && !open && (
-        <div className="pad-bottom fixed inset-x-0 bottom-0 z-40 animate-rise px-3">
-          <div className="mx-auto max-w-lg overflow-hidden rounded-2xl bg-ink text-white shadow-soft">
-            {!undoAsk ? (
-              <div className="flex items-center gap-3 px-4 py-3">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-pass-500 text-[18px] font-black">✓</span>
-                <div className="min-w-0 flex-1 truncate text-[15px] font-semibold">
-                  {t('letInShort', { plate: plateText(lastEntry.regNo) })}
-                </div>
-                <button type="button" onClick={() => setUndoAsk(true)}
-                  className="press shrink-0 rounded-xl bg-white px-4 py-2.5 text-[15px] font-extrabold text-ink">
-                  {t('undoCountdown', { s: undoLeft })}
-                </button>
-              </div>
-            ) : (
-              <div className="px-4 py-4">
-                <div className="flex items-baseline justify-between gap-3">
-                  <h2 className="text-[17px] font-extrabold">{t('undoTitle')}</h2>
-                  <span className="plate shrink-0 text-[15px] text-white/80">{plateText(lastEntry.regNo)} · {undoLeft}s</span>
-                </div>
-                <p className="mt-1 text-[13px] text-white/75">{t('undoBody')}</p>
-                <div className="mt-3 grid gap-2">
-                  {['undoWrongPass', 'undoMisTap', 'undoTurnedBack'].map((k) => (
-                    <button key={k} type="button" disabled={undoBusy} onClick={() => undoLast(english(k))}
-                      className="press rounded-xl bg-stop-600 px-4 py-3 text-left text-[15px] font-bold text-white disabled:opacity-60">
-                      {undoBusy ? t('undoing') : t(k)}
-                    </button>
-                  ))}
-                  <button type="button" disabled={undoBusy} onClick={() => setUndoAsk(false)}
-                    className="press rounded-xl border border-white/25 px-4 py-3 text-[15px] font-semibold">
-                    {t('keepEntry')}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {open && (
         <PassSheet ticketNo={open.ticketNo} typed={open.typed} fallbackPass={open.pass || null}
-          onClose={closeSheet} onRecorded={onSheetRecorded} />
+          onClose={closeSheet} onRecorded={onRecorded} />
       )}
 
       {/*
