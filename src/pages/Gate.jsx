@@ -6,7 +6,6 @@ import { setSoundOn, soundOn } from '../lib/feedback';
 import { dismissProblem, saveArrivals, savedArrivals, sendNow, subscribe, unqueue } from '../lib/offline';
 import { batteryWarning, useBattery, useDaylight, useWakeLock } from '../lib/device';
 import { signal } from '../lib/feedback';
-import NumberPad from '../components/NumberPad.jsx';
 import ConvoyCard from '../components/ConvoyCard.jsx';
 import PassSheet from '../components/PassSheet.jsx';
 import SellSheet from '../components/SellSheet.jsx';
@@ -79,23 +78,6 @@ export default function Gate() {
   const battery = useBattery();
   const lowBattery = batteryWarning(battery);
   const daylight = useDaylight();
-
-  /*
-   * THE NUMBER PAD, AND WHEN IT GETS OUT OF THE WAY.
-   *
-   * On by default, remembered per phone. It shows while the first four
-   * characters are typed — the last four digits of a plate, which is all most
-   * searches need — and then steps aside so the matches have the screen. "123"
-   * brings it back for a longer number; "ABC" swaps it for the phone keyboard.
-   */
-  const [padMode, setPadMode] = useState(() => { try { return localStorage.getItem('pravesha.gate.pad') !== 'off'; } catch { return true; } });
-  const [padForced, setPadForced] = useState(false);
-  const choosePad = (on) => {
-    try { localStorage.setItem('pravesha.gate.pad', on ? 'on' : 'off'); } catch { /* private mode */ }
-    setPadMode(on);
-    setPadForced(on);
-    requestAnimationFrame(() => searchRef.current?.focus());
-  };
 
   /*
    * UNDO, FOR A MINUTE.
@@ -323,7 +305,6 @@ export default function Gate() {
     setOpen(null);
     setQ('');
     setResults(null);
-    setPadForced(false);
     /* After the sheet unmounts, or the focus lands on a node about to go away. */
     requestAnimationFrame(() => searchRef.current?.focus());
   };
@@ -439,38 +420,18 @@ export default function Gate() {
           <div className="flex gap-2">
             <input
               ref={searchRef} className="field min-w-0 flex-1 text-[18px] uppercase tracking-wide" autoFocus
-              placeholder={t('searchPh')} value={q} inputMode={padMode ? 'none' : 'text'}
+              placeholder={t('searchPh')} value={q} inputMode="text"
               autoCapitalize="characters" autoCorrect="off" spellCheck={false}
               onChange={(e) => setQ(e.target.value)}
             />
-            {!padMode && (
-              <button type="button" onClick={() => choosePad(true)}
-                className="press shrink-0 rounded-xl border border-line bg-white px-3 text-[14px] font-bold text-brand">
-                {t('digitsKey')}
-              </button>
-            )}
-            {padMode && typed.length >= 4 && !padForced && (
-              <button type="button" onClick={() => setPadForced(true)} aria-label={t('digitsKey')}
-                className="press shrink-0 rounded-xl border border-line bg-white px-3 text-[14px] font-bold text-brand">
-                123
-              </button>
-            )}
             {q && (
               <button type="button" aria-label={t('clearSearch')}
-                onClick={() => { setQ(''); setPadForced(false); searchRef.current?.focus(); }}
+                onClick={() => { setQ(''); searchRef.current?.focus(); }}
                 className="press shrink-0 rounded-xl border border-line bg-white px-4 text-[15px] font-bold text-ink">
                 ✕ {t('clearSearch')}
               </button>
             )}
           </div>
-          {padMode && (typed.length < 4 || padForced) && (
-            <NumberPad
-              onDigit={(d) => setQ((v) => v + d)}
-              onBackspace={() => setQ((v) => v.slice(0, -1))}
-              onLetters={() => choosePad(false)}
-              lettersLabel={t('lettersKey')} deleteLabel={t('deleteKey')}
-            />
-          )}
           {/* The tabs sit with the search box, not below the day's history:
               they are how a staff member says which list they are searching. */}
           <div className="mt-2.5 flex gap-2">
@@ -664,7 +625,7 @@ export default function Gate() {
       </main>
 
       {/* The last entry, with a minute to take it back. Held at the bottom, clear
-          of the search box and the pad, where a thumb already rests. */}
+          of the search box, where a thumb already rests. */}
       {lastEntry && undoLeft > 0 && !open && (
         <div className="pad-bottom fixed inset-x-0 bottom-0 z-40 animate-rise px-3">
           <div className="mx-auto max-w-lg overflow-hidden rounded-2xl bg-ink text-white shadow-soft">
