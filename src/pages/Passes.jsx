@@ -56,6 +56,26 @@ export default function Passes({ today }) {
 
   useEffect(() => { load(); }, [load]);
 
+  /* A booking or an entry anywhere reloads the list within seconds, while the
+     phone is looking at it. Not under an open booking sheet. */
+  const beat = useRef(null);
+  useEffect(() => {
+    let alive = true;
+    const tick = async () => {
+      if (!alive || document.visibilityState !== 'visible') return;
+      try {
+        const p = await api.pulse();
+        if (!alive) return;
+        const moved = beat.current !== null && p.pulse !== beat.current;
+        beat.current = p.pulse;
+        if (moved && !open) load();
+      } catch { /* the next tick asks again */ }
+    };
+    tick();
+    const id = setInterval(tick, 3000);
+    return () => { alive = false; clearInterval(id); };
+  }, [load, open]);
+
   const searching = term.replace(/[^A-Za-z0-9]/g, '').length >= 3;
   const list = data?.passes || [];
 

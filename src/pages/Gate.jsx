@@ -69,13 +69,32 @@ export default function Gate() {
 
   useEffect(() => { load(); }, [load]);
 
-  /* A slow, quiet refresh: often enough that two gates agree, rare enough that a
-     phone on a hill is not kept awake talking to the network. */
+  /*
+   * Caught up the moment something happens. Every few seconds the phone asks
+   * the server one tiny question — has anything changed? — and reloads today's
+   * list only when the answer moves: a booking paid by WhatsApp, a pass sold at
+   * either gate, an entry recorded on another phone. A quiet gate costs a few
+   * bytes; a visitor who books standing at the barrier is on the list at once.
+   * Nothing reloads under an open pass sheet.
+   */
+  const beat = useRef(null);
   useEffect(() => {
-    const id = setInterval(() => { if (!open && document.visibilityState === 'visible') load({ quiet: true }); }, 30000);
-    const onShow = () => document.visibilityState === 'visible' && load({ quiet: true });
+    let alive = true;
+    const tick = async () => {
+      if (!alive || document.visibilityState !== 'visible') return;
+      try {
+        const p = await api.pulse();
+        if (!alive) return;
+        const moved = beat.current !== null && p.pulse !== beat.current;
+        beat.current = p.pulse;
+        if (moved && !open) load({ quiet: true });
+      } catch { /* the next tick asks again */ }
+    };
+    tick();
+    const id = setInterval(tick, 3000);
+    const onShow = () => { if (document.visibilityState === 'visible') { load({ quiet: true }); tick(); } };
     document.addEventListener('visibilitychange', onShow);
-    return () => { clearInterval(id); document.removeEventListener('visibilitychange', onShow); };
+    return () => { alive = false; clearInterval(id); document.removeEventListener('visibilitychange', onShow); };
   }, [load, open]);
 
   /*

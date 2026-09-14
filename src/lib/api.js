@@ -84,6 +84,7 @@ export const api = {
       .catch((e) => { if (e.body) return e.body; throw e; }),
   session: () => call('/session'),
   signOut: () => call('/session', { method: 'DELETE' }),
+  pulse: () => call('/pulse'),
   arrivals: (date) => call(`/arrivals${date ? `?date=${date}` : ''}`),
   search: (q) => call(`/search?q=${encodeURIComponent(q)}`),
   pass: (ticketNo) => call(`/pass/${encodeURIComponent(ticketNo)}`),
