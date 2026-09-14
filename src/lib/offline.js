@@ -141,6 +141,21 @@ export function enqueue({ pass, override = false, typed = null, elapsedMs = null
   return item;
 }
 
+/**
+ * Take an entry back off the phone before it has been sent.
+ *
+ * True when it was still waiting — then nothing ever reached the server and
+ * there is nothing more to undo. False when it has already gone.
+ */
+export function unqueue(ticketNo) {
+  const before = queue();
+  const after = before.filter((q) => q.ticketNo !== ticketNo);
+  if (after.length === before.length) return false;
+  write(KEYS.queue, after);
+  notify();
+  return true;
+}
+
 export function dismissProblem(clientId) {
   write(KEYS.problems, problems().filter((p) => p.clientId !== clientId));
   notify();

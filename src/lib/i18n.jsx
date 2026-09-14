@@ -33,6 +33,20 @@ const S = {
     verifiedShift: 'Verified this shift', passSold: 'pass sold', entryRecorded: 'entry recorded',
     showAllChecked: 'Show all {n}', showFewerChecked: 'Show fewer', expectedToday: '{n} expected today',
     clearSearch: 'Clear',
+    undo: 'Undo', undoCountdown: 'Undo · {s}s', letInShort: '{plate} let in',
+    undoTitle: 'Undo this entry?',
+    undoBody: 'The pass goes back to unused. If the WhatsApp confirmation has not gone to the visitor yet, it will not be sent.',
+    undoWrongPass: 'Opened the wrong pass', undoMisTap: 'Tapped by mistake', undoTurnedBack: 'Vehicle turned back',
+    undoing: 'Undoing…', undoneOk: 'Undone — {plate} can be used again.', keepEntry: 'Keep the entry',
+    convoyOne: 'Same visitor — 1 more vehicle today', convoyMany: 'Same visitor — {n} more vehicles today',
+    convoyHint: 'Untick any vehicle that is not here, then let the rest in together.',
+    convoyNeedsSignal: 'Needs signal — open each pass on its own for now.',
+    convoyAdmit: 'Let in {n} selected', convoyAdmitting: 'Letting in…', convoyIn: 'Let in',
+    convoyOutside: 'Outside its slot — tap to open and decide',
+    batteryLow: 'Battery {n}% — plug in soon. Entries stay safe on the phone even if it switches off.',
+    batteryCritical: 'Battery {n}% — charge the phone now.',
+    daylightAuto: 'Daylight: auto', daylightOn: 'Daylight: on', daylightOff: 'Daylight: off',
+    lettersKey: 'ABC', digitsKey: '123 pad', deleteKey: 'Delete',
     showMoreVehicles: 'Show {n} more', showingOfTotal: 'Showing {shown} of {n} — type a number to find one',
     allowedOutside: 'allowed outside slot', inWord: 'in',
     loadingToday: 'Loading today’s passes…',
@@ -151,6 +165,20 @@ const S = {
     verifiedShift: 'ಈ ಶಿಫ್ಟ್‌ನಲ್ಲಿ ಪರಿಶೀಲಿಸಿದವು', passSold: 'ಪಾಸ್ ಮಾರಾಟ', entryRecorded: 'ಪ್ರವೇಶ ದಾಖಲಾಗಿದೆ',
     showAllChecked: 'ಎಲ್ಲಾ {n} ತೋರಿಸಿ', showFewerChecked: 'ಕಡಿಮೆ ತೋರಿಸಿ', expectedToday: 'ಇಂದು {n} ನಿರೀಕ್ಷಿತ',
     clearSearch: 'ಅಳಿಸಿ',
+    undo: 'ರದ್ದುಮಾಡಿ', undoCountdown: 'ರದ್ದುಮಾಡಿ · {s}ಸೆ', letInShort: '{plate} ಒಳಗೆ ಬಿಡಲಾಗಿದೆ',
+    undoTitle: 'ಈ ಪ್ರವೇಶವನ್ನು ರದ್ದುಮಾಡಬೇಕೇ?',
+    undoBody: 'ಪಾಸ್ ಮತ್ತೆ ಬಳಸದ ಸ್ಥಿತಿಗೆ ಹೋಗುತ್ತದೆ. ಸಂದರ್ಶಕರಿಗೆ WhatsApp ದೃಢೀಕರಣ ಇನ್ನೂ ಹೋಗಿಲ್ಲದಿದ್ದರೆ, ಅದನ್ನು ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ.',
+    undoWrongPass: 'ತಪ್ಪು ಪಾಸ್ ತೆರೆಯಲಾಗಿದೆ', undoMisTap: 'ತಪ್ಪಾಗಿ ಒತ್ತಲಾಗಿದೆ', undoTurnedBack: 'ವಾಹನ ಹಿಂತಿರುಗಿತು',
+    undoing: 'ರದ್ದುಮಾಡಲಾಗುತ್ತಿದೆ…', undoneOk: 'ರದ್ದುಮಾಡಲಾಗಿದೆ — {plate} ಮತ್ತೆ ಬಳಸಬಹುದು.', keepEntry: 'ಪ್ರವೇಶ ಇರಲಿ',
+    convoyOne: 'ಅದೇ ಸಂದರ್ಶಕರು — ಇಂದು ಇನ್ನೂ 1 ವಾಹನ', convoyMany: 'ಅದೇ ಸಂದರ್ಶಕರು — ಇಂದು ಇನ್ನೂ {n} ವಾಹನಗಳು',
+    convoyHint: 'ಇಲ್ಲಿ ಇಲ್ಲದ ವಾಹನದ ಗುರುತು ತೆಗೆಯಿರಿ, ಉಳಿದವನ್ನು ಒಟ್ಟಿಗೆ ಒಳಗೆ ಬಿಡಿ.',
+    convoyNeedsSignal: 'ಸಿಗ್ನಲ್ ಬೇಕು — ಸದ್ಯಕ್ಕೆ ಪ್ರತಿಯೊಂದು ಪಾಸ್ ಅನ್ನು ಬೇರೆಯಾಗಿ ತೆರೆಯಿರಿ.',
+    convoyAdmit: 'ಆಯ್ಕೆಮಾಡಿದ {n} ಒಳಗೆ ಬಿಡಿ', convoyAdmitting: 'ಒಳಗೆ ಬಿಡಲಾಗುತ್ತಿದೆ…', convoyIn: 'ಒಳಗೆ ಬಿಡಲಾಗಿದೆ',
+    convoyOutside: 'ಸ್ಲಾಟ್ ಹೊರಗೆ — ತೆರೆದು ನಿರ್ಧರಿಸಿ',
+    batteryLow: 'ಬ್ಯಾಟರಿ {n}% — ಬೇಗ ಚಾರ್ಜ್ ಮಾಡಿ. ಫೋನ್ ಆಫ್ ಆದರೂ ಪ್ರವೇಶಗಳು ಫೋನ್‌ನಲ್ಲಿ ಸುರಕ್ಷಿತ.',
+    batteryCritical: 'ಬ್ಯಾಟರಿ {n}% — ಈಗಲೇ ಚಾರ್ಜ್ ಮಾಡಿ.',
+    daylightAuto: 'ಹಗಲು ಮೋಡ್: ಸ್ವಯಂ', daylightOn: 'ಹಗಲು ಮೋಡ್: ಆನ್', daylightOff: 'ಹಗಲು ಮೋಡ್: ಆಫ್',
+    lettersKey: 'ABC', digitsKey: '123 ಪ್ಯಾಡ್', deleteKey: 'ಅಳಿಸಿ',
     showMoreVehicles: 'ಇನ್ನೂ {n} ತೋರಿಸಿ', showingOfTotal: '{n} ರಲ್ಲಿ {shown} ತೋರಿಸಲಾಗಿದೆ — ಹುಡುಕಲು ಸಂಖ್ಯೆ ಟೈಪ್ ಮಾಡಿ',
     allowedOutside: 'ಸ್ಲಾಟ್ ಹೊರಗೆ ಅನುಮತಿಸಲಾಗಿದೆ', inWord: 'ಒಳಗೆ',
     loadingToday: 'ಇಂದಿನ ಪಾಸ್‌ಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ…',
@@ -282,6 +310,9 @@ export function LangProvider({ children }) {
 }
 
 export const useT = () => useContext(Ctx);
+
+/** A string in English whatever the screen is in — for what is written down for the office. */
+export const english = (key) => S.en[key] ?? key;
 
 /** One tap to the other language, labelled in that language so it can be found. */
 export function LangToggle({ className = '' }) {

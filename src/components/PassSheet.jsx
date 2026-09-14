@@ -75,16 +75,24 @@ export default function PassSheet({ ticketNo, typed, fallbackPass = null, onClos
   /*
    * A recorded entry does not wait to be dismissed.
    *
-   * The green flash is held just long enough to be seen by the staff member and
-   * the driver, then the sheet closes on its own and the gate screen takes the
-   * keyboard back for the next number plate. A refusal never auto-closes: that
-   * one needs reading.
+   * The green flash is a blink — about a tenth of a second — and then the
+   * cursor is back in the search box for the next plate. It can be that short
+   * because it is no longer the only confirmation: the sound and buzz go with
+   * it, and the "let in · Undo" bar at the bottom of the gate screen stays for a
+   * minute. An entry kept on the phone without signal is held longer, because
+   * the words "saved offline" need reading. A refusal never closes by itself.
+   *
+   * The latest onClose is read through a ref. The gate screen redraws every
+   * second while an undo is counting down, and a timer restarted on every redraw
+   * would never fire.
    */
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     if (!result?.ok) return undefined;
-    const id = setTimeout(() => onClose(), result.offline ? 2200 : 1500);
+    const id = setTimeout(() => closeRef.current(), result.offline ? 1500 : 120);
     return () => clearTimeout(id);
-  }, [result, onClose]);
+  }, [result]);
 
   /* Keep the entry on the phone, to be sent when the signal is back. */
   function keepOnPhone(override) {
