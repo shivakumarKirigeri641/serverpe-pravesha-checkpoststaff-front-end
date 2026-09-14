@@ -50,6 +50,7 @@ export default function Gate() {
   const [offline, setOffline] = useState(false);
   const [net, setNet] = useState({ queued: 0, problems: [], sending: false });
   const [tab, setTab] = useState('pending');
+  const [showAllVerified, setShowAllVerified] = useState(false);
   const [q, setQ] = useState('');
   const [results, setResults] = useState(null);
   const [searching, setSearching] = useState(false);
@@ -249,60 +250,80 @@ export default function Gate() {
 
   return (
     <div className="min-h-screen pb-24">
-      <header className="sticky top-0 z-20 bg-brand text-white shadow-soft">
+      {/*
+       * EVERYTHING NEEDED TO CHECK A VEHICLE STAYS ON SCREEN.
+       *
+       * The header, the search box and the two tabs are one sticky block, so a
+       * staff member never scrolls to find where to type or which list they are
+       * in. Before, the tabs sat below the shift's history — which grows all
+       * day — so by mid-morning they were a screen and a half down and looked
+       * as though they had disappeared while typing.
+       *
+       * It is kept short on purpose: one header line instead of three. The
+       * counts that had their own row are in the tab labels, where they are
+       * read anyway, and the two settings are icons in the header.
+       */}
+      <div className="sticky top-0 z-20 shadow-soft">
+      <header className="bg-brand text-white">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
           <div className="min-w-0">
             <div className="truncate text-[15px] font-bold">{me?.checkpost?.name}</div>
             <div className="truncate text-[12px] text-white/70">
-              {me?.staff?.name} · {t('onDuty')} · {me?.serverDate}
+              {me?.staff?.name} · {t('onDuty')}
+              {totals ? ` · ${t('expectedToday', { n: totals.expected })}` : ''}
             </div>
           </div>
-          <div className="flex shrink-0 gap-2">
+          <div className="flex shrink-0 items-center gap-1.5">
+            {/* Language and sound had a row of their own — chosen once a shift,
+                paid for on every screen. Icons, with the word for a long press. */}
+            <LangToggle className="bg-white/15 text-white" />
+            <button type="button" onClick={toggleSound} aria-pressed={sound} title={sound ? t('soundOn') : t('soundOff')}
+              className="rounded-lg bg-white/15 px-2.5 py-2 text-[15px] leading-none text-white">
+              {sound ? '🔔' : '🔕'}
+            </button>
             <button type="button" onClick={() => setSelling('')} disabled={offline} title={offline ? t('sellNeedsSignal') : undefined}
               className="rounded-lg bg-white px-3 py-2 text-[13px] font-bold text-brand disabled:opacity-50">
               {t('sellPass')}
             </button>
-            <button type="button" onClick={() => setEnding(true)} className="rounded-lg border border-white/25 px-3 py-2 text-[13px] font-semibold">
+            <button type="button" onClick={() => setEnding(true)} className="rounded-lg border border-white/25 px-2.5 py-2 text-[13px] font-semibold">
               {t('endShift')}
             </button>
           </div>
         </div>
 
-        {totals && (
-          <div className="mx-auto flex max-w-lg gap-2 px-4 pb-2">
-            <Stat label={t('expected')} value={totals.expected} />
-            <Stat label={t('entered')} value={totals.entered} tone="bg-pass-500/25" />
-            <Stat label={t('stillToCome')} value={totals.pending} tone="bg-white/15" />
-          </div>
-        )}
-        <div className="mx-auto flex max-w-lg items-center justify-end gap-2 px-4 pb-2">
-          {(offline || net.queued > 0) && (
-            <span className={`mr-auto rounded-lg px-2.5 py-1.5 text-[12px] font-bold ${offline ? 'bg-ask-500 text-white' : 'bg-white/15 text-white'}`}>
+        {(offline || net.queued > 0) && (
+          <div className="mx-auto max-w-lg px-4 pb-2">
+            <span className={`inline-block rounded-lg px-2.5 py-1.5 text-[12px] font-bold ${offline ? 'bg-ask-500 text-white' : 'bg-white/15 text-white'}`}>
               {offline ? '📵 ' : '⏫ '}
               {net.sending ? t('sendingNow', { n: net.queued }) : net.queued > 0 ? t('waitingToSend', { n: net.queued }) : t('offlineTitle')}
             </span>
-          )}
-          <LangToggle className="bg-white/15 text-white" />
-          <button type="button" onClick={toggleSound} aria-pressed={sound}
-            className="rounded-lg bg-white/15 px-3 py-1.5 text-[13px] font-bold text-white">
-            {sound ? `🔔 ${t('soundOn')}` : `🔕 ${t('soundOff')}`}
-          </button>
-        </div>
+          </div>
+        )}
       </header>
 
-      <main className="mx-auto max-w-lg px-4">
-        <div className="sticky top-[140px] z-10 -mx-4 bg-shell px-4 pb-3 pt-3">
+      <div className="bg-shell px-4 pb-2.5 pt-2.5">
+        <div className="mx-auto max-w-lg">
           <input
             ref={searchRef} className="field text-[18px] uppercase tracking-wide" autoFocus
             placeholder={t('searchPh')} value={q} inputMode="text"
             autoCapitalize="characters" autoCorrect="off" spellCheck={false}
             onChange={(e) => setQ(e.target.value)}
           />
-          <p className="mt-1.5 px-1 text-[13px] text-muted">
+          {/* The tabs sit with the search box, not below the day's history:
+              they are how a staff member says which list they are searching. */}
+          <div className="mt-2.5 flex gap-2">
+            <Tab active={tab === 'pending'} onClick={() => setTab('pending')} label={`${t('stillToCome')} (${totals?.pending ?? 0})`} />
+            <Tab active={tab === 'entered'} onClick={() => setTab('entered')} label={`${t('entered')} (${totals?.entered ?? 0})`} />
+          </div>
+          <p className="mt-1.5 px-1 text-[12.5px] text-muted">
             {!searchingNow ? t('searchHint')
               : `${t(list.length === 1 ? 'matchOne' : 'matchMany', { n: list.length })}${searching ? ` · ${t('stillLooking')}` : ''}`}
           </p>
         </div>
+      </div>
+      </div>
+
+      <main className="mx-auto max-w-lg px-4 pt-3">
 
         {offline && arrivals?.fromPhone && (
           <div className="mb-3 rounded-xl border border-ask-500/30 bg-ask-50 px-4 py-3 text-ask-700">
@@ -334,45 +355,9 @@ export default function Gate() {
           <button type="button" onClick={sendNow} className="btn-quiet mb-3 w-full">⏫ {t('sendNow')} · {t('waitingToSend', { n: net.queued })}</button>
         )}
 
-        {verified.length > 0 && !searchingNow && (
-          <section className="mb-4">
-            <h2 className="mb-2 px-1 text-[12px] font-bold uppercase tracking-wide text-muted">
-              {t('verifiedShift')} · {verified.length}
-            </h2>
-            <ul className="space-y-1.5">
-              {verified.map((e) => (
-                <li key={e.ticketNo}
-                  className={`flex items-center justify-between rounded-xl border px-4 py-2.5 transition-colors duration-500 ${
-                    e.ticketNo === justNow
-                      ? 'border-pass-500/40 bg-pass-50'
-                      : 'border-line bg-white'}`}>
-                  <div className="min-w-0">
-                    <div className="plate text-[17px]">{plateText(e.regNo)}</div>
-                    <div className="truncate text-[13px] text-muted">
-                      {e.sold ? `${t('passSold')} · ${e.sold}` : e.type || t('entryRecorded')}
-                      {e.override ? ` · ${t('allowedOutside')}` : ''}
-                      {e.saved ? ` · 📵 ${t('savedOfflineShort')}` : ''}
-                    </div>
-                  </div>
-                  <span className="shrink-0 text-[13px] font-semibold text-pass-700">
-                    {e.at ? clock(e.at) : t('inWord')}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
         {error && (
           <p className="mb-3 rounded-xl border border-stop-500/25 bg-stop-50 px-4 py-3 text-[15px] text-stop-700">{error}</p>
         )}
-
-        {/* The tabs stay while typing: the search runs inside the one chosen,
-            so they are how a staff member says what they are looking for. */}
-        <div className="mb-3 flex gap-2">
-          <Tab active={tab === 'pending'} onClick={() => setTab('pending')} label={`${t('stillToCome')} (${totals?.pending ?? 0})`} />
-          <Tab active={tab === 'entered'} onClick={() => setTab('entered')} label={`${t('entered')} (${totals?.entered ?? 0})`} />
-        </div>
 
         {!arrivals && !error && <p className="py-10 text-center text-muted">{t('loadingToday')}</p>}
 
@@ -435,6 +420,49 @@ export default function Gate() {
             </li>
           ))}
         </ul>
+
+        {/*
+         * WHAT THIS SHIFT HAS ALREADY DONE — UNDERNEATH, AND SHORT.
+         *
+         * This list used to sit above the queue and above the tabs, so it grew
+         * all morning and pushed the actual work off the screen. It is history:
+         * it belongs below, and three lines of it is what anybody reads. The
+         * one just recorded stays at the top of it, lit, for a moment.
+         */}
+        {verified.length > 0 && !searchingNow && (
+          <section className="mt-6 border-t border-line pt-4">
+            <h2 className="mb-2 px-1 text-[12px] font-bold uppercase tracking-wide text-muted">
+              {t('verifiedShift')} · {verified.length}
+            </h2>
+            <ul className="space-y-1.5">
+              {(showAllVerified ? verified : verified.slice(0, 3)).map((e) => (
+                <li key={e.ticketNo}
+                  className={`flex items-center justify-between rounded-xl border px-4 py-2.5 transition-colors duration-500 ${
+                    e.ticketNo === justNow
+                      ? 'border-pass-500/40 bg-pass-50'
+                      : 'border-line bg-white'}`}>
+                  <div className="min-w-0">
+                    <div className="plate text-[17px]">{plateText(e.regNo)}</div>
+                    <div className="truncate text-[13px] text-muted">
+                      {e.sold ? `${t('passSold')} · ${e.sold}` : e.type || t('entryRecorded')}
+                      {e.override ? ` · ${t('allowedOutside')}` : ''}
+                      {e.saved ? ` · 📵 ${t('savedOfflineShort')}` : ''}
+                    </div>
+                  </div>
+                  <span className="shrink-0 text-[13px] font-semibold text-pass-700">
+                    {e.at ? clock(e.at) : t('inWord')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {verified.length > 3 && (
+              <button type="button" onClick={() => setShowAllVerified((v) => !v)}
+                className="btn-quiet mt-2 w-full text-[13px]">
+                {showAllVerified ? t('showFewerChecked') : t('showAllChecked', { n: verified.length })}
+              </button>
+            )}
+          </section>
+        )}
       </main>
 
       {open && (
@@ -545,12 +573,6 @@ const Line = ({ label, value, strong = false }) => (
   </div>
 );
 
-const Stat = ({ label, value, tone = 'bg-white/10' }) => (
-  <div className={`flex-1 rounded-xl ${tone} px-3 py-2`}>
-    <div className="text-[20px] font-extrabold leading-tight">{value}</div>
-    <div className="text-[11px] uppercase tracking-wide text-white/70">{label}</div>
-  </div>
-);
 
 const Tab = ({ active, onClick, label }) => (
   <button type="button" onClick={onClick}
