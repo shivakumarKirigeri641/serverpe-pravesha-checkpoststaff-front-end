@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSession } from '../lib/session';
+import { LangToggle, useT } from '../lib/i18n.jsx';
 
 /*
  * Sign-in at a gate: a mobile number, then a four-digit code sent to it.
@@ -15,14 +16,15 @@ import { useSession } from '../lib/session';
  * again — at a barrier, a screen that throws away what you typed is a screen you
  * fight.
  *
- * EVERY REFUSAL IS IN BOTH LANGUAGES. The server sends the sentence in English
- * and in Kannada and both are shown, one under the other. The person reading it
- * is standing at a gate in Chikkamagaluru, and "This mobile number is not
- * permitted to login" is exactly the sentence somebody needs to understand
- * first time.
+ * THE SCREEN IS IN THE CHOSEN LANGUAGE; WHAT THE SERVER SAYS IS IN BOTH. The
+ * language switch is at the top, before anything is typed. A refusal from the
+ * server still shows both sentences, the chosen language first: "This mobile
+ * number is not permitted to login" is exactly the sentence somebody needs to
+ * understand first time.
  */
 export default function SignIn() {
   const { signInWithCode, requestCode, endedNotice } = useSession();
+  const { t, lang } = useT();
 
   const [step, setStep] = useState('mobile');     // 'mobile' → 'code'
   const [mobile, setMobile] = useState('');
@@ -88,23 +90,25 @@ export default function SignIn() {
   return (
     <div className="flex min-h-screen flex-col justify-center px-6 py-10">
       <div className="mx-auto w-full max-w-sm">
+        <div className="mb-4 flex justify-end">
+          <LangToggle className="border border-line bg-white text-brand" />
+        </div>
         <div className="mb-8 text-center">
           <img src="/icon-192.png" alt="" className="mx-auto h-16 w-16 rounded-2xl shadow-soft" />
-          <h1 className="mt-4 text-2xl font-extrabold">Pravesha Checkpost</h1>
-          <p className="mt-1 text-[15px] text-muted">Sign in to start your shift.</p>
+          <h1 className="mt-4 text-2xl font-extrabold">{t('appTitle')}</h1>
+          <p className="mt-1 text-[15px] text-muted">{t('signInSub')}</p>
         </div>
 
         {endedNotice && !error && (
-          <p className="mb-4 rounded-xl border border-ask-500/30 bg-ask-50 px-4 py-3 text-[15px] text-ask-700">{endedNotice}</p>
+          <p className="mb-4 rounded-xl border border-ask-500/30 bg-ask-50 px-4 py-3 text-[15px] text-ask-700">{t('shiftEnded')}</p>
         )}
 
-        <Says tone="stop" says={error} />
-        {!error && <Says tone="pass" says={notice} />}
+        <Says tone="stop" says={error} lang={lang} />
+        {!error && <Says tone="pass" says={notice} lang={lang} />}
 
         {choices ? (
           <div className="card p-5">
-            <h2 className="text-[15px] font-semibold">Which checkpost are you at?</h2>
-            <p className="text-[13px] text-muted">ನೀವು ಯಾವ ಚೆಕ್‌ಪೋಸ್ಟ್‌ನಲ್ಲಿದ್ದೀರಿ?</p>
+            <h2 className="text-[15px] font-semibold">{t('whichCheckpost')}</h2>
             <div className="mt-3 space-y-2">
               {choices.map((c) => (
                 <button key={c.id} type="button" onClick={() => submit(c.id)} disabled={busy}
@@ -119,12 +123,10 @@ export default function SignIn() {
           <form className="card space-y-5 p-5"
             onSubmit={(e) => { e.preventDefault(); if (step === 'mobile') getCode(); else submit(); }}>
             <div>
-              <label className="label" htmlFor="mobile">
-                Mobile number <span className="font-normal text-muted">· ಮೊಬೈಲ್ ಸಂಖ್ಯೆ</span>
-              </label>
+              <label className="label" htmlFor="mobile">{t('mobileNumber')}</label>
               <input
                 id="mobile" className="field text-[19px] tracking-wide" inputMode="numeric" autoComplete="username"
-                placeholder="10-digit number" value={mobile} maxLength={10}
+                placeholder={t('mobilePh')} value={mobile} maxLength={10}
                 onChange={(e) => {
                   setMobile(e.target.value.replace(/\D/g, '').slice(0, 10));
                   /* Changing the number abandons the code that was sent to the
@@ -132,17 +134,12 @@ export default function SignIn() {
                   if (step === 'code') { setStep('mobile'); setCode(''); setNotice(null); }
                 }}
               />
-              <p className="mt-2 text-[13px] text-muted">
-                Only numbers your administrator has added can sign in.
-                <span className="block">ನಿರ್ವಾಹಕರು ಸೇರಿಸಿದ ಸಂಖ್ಯೆಗಳಿಗೆ ಮಾತ್ರ ಪ್ರವೇಶ.</span>
-              </p>
+              <p className="mt-2 text-[13px] text-muted">{t('onlyAdded')}</p>
             </div>
 
             {step === 'code' && (
               <div>
-                <label className="label" htmlFor="code">
-                  4-digit code <span className="font-normal text-muted">· 4 ಅಂಕಿಯ ಕೋಡ್</span>
-                </label>
+                <label className="label" htmlFor="code">{t('codeLabel')}</label>
                 <div className="relative" onClick={() => codeRef.current?.focus()}>
                   <input
                     ref={codeRef} id="code" className="absolute inset-0 h-full w-full opacity-0" inputMode="numeric"
@@ -161,57 +158,54 @@ export default function SignIn() {
                     ))}
                   </div>
                 </div>
-                <p className="mt-2 text-[13px] text-muted">
-                  Sent by SMS to ••••{mobile.slice(-4)}. Valid for 3 minutes.
-                  <span className="block">••••{mobile.slice(-4)} ಗೆ SMS ಕಳುಹಿಸಲಾಗಿದೆ. 3 ನಿಮಿಷ ಮಾನ್ಯ.</span>
-                </p>
+                <p className="mt-2 text-[13px] text-muted">{t('sentTo', { d: mobile.slice(-4) })}</p>
               </div>
             )}
 
             {step === 'mobile' ? (
               <button type="submit" className="btn-primary w-full text-[17px]" disabled={!tenDigits || busy || secondsLeft > 0}>
-                {busy ? 'Sending…' : secondsLeft > 0 ? `Wait ${secondsLeft}s` : 'Get OTP'}
+                {busy ? t('sending') : secondsLeft > 0 ? t('waitS', { s: secondsLeft }) : t('getOtp')}
               </button>
             ) : (
               <>
                 <button type="submit" className="btn-primary w-full text-[17px]" disabled={code.length !== 4 || busy}>
-                  {busy ? 'Checking…' : 'Start shift'}
+                  {busy ? t('checkingDots') : t('startShift')}
                 </button>
                 <button type="button" className="w-full py-2 text-[14px] font-semibold text-muted"
                   disabled={busy || secondsLeft > 0} onClick={getCode}>
-                  {secondsLeft > 0 ? `Send another code in ${secondsLeft}s` : 'Send another code'}
+                  {secondsLeft > 0 ? t('sendAnotherIn', { s: secondsLeft }) : t('sendAnother')}
                 </button>
               </>
             )}
           </form>
         )}
 
-        <p className="mt-6 text-center text-[12px] text-muted">
-          Pravesha — a product of ServerPe App Solutions
-        </p>
+        <p className="mt-6 text-center text-[12px] text-muted">{t('product')}</p>
       </div>
     </div>
   );
 }
 
 /*
- * Anything the server says, in both languages, English first.
+ * Anything the server says, in both languages, the chosen one first.
  *
- * The Kannada line is not a translation added for politeness: for most people
- * working a barrier in this district it is the line they will actually read, and
- * putting it beneath rather than instead keeps the screen useful to both.
+ * The second line is not a translation added for politeness: at a barrier in
+ * this district either language may be the one somebody actually reads, and
+ * keeping both keeps the screen useful to whoever is holding it.
  */
 const TONES = {
   stop: 'border-stop-500/25 bg-stop-50 text-stop-700',
   pass: 'border-pass-500/25 bg-pass-50 text-pass-700',
 };
 
-function Says({ says, tone = 'stop' }) {
+function Says({ says, tone = 'stop', lang = 'en' }) {
   if (!says || !says.message) return null;
+  const first = lang === 'kn' && says.messageKn ? says.messageKn : says.message;
+  const second = lang === 'kn' ? (says.messageKn ? says.message : null) : says.messageKn;
   return (
     <div className={`mb-4 rounded-xl border px-4 py-3 ${TONES[tone]}`}>
-      <p className="text-[15px] font-medium">{says.message}</p>
-      {says.messageKn && <p className="mt-1 text-[14px] opacity-90">{says.messageKn}</p>}
+      <p className="text-[15px] font-medium">{first}</p>
+      {second && <p className="mt-1 text-[14px] opacity-90">{second}</p>}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
+import { useT } from '../lib/i18n.jsx';
 import VehicleSheet from '../components/VehicleSheet.jsx';
 import { clock, plateText } from '../lib/verdict';
 
@@ -16,28 +17,20 @@ import { clock, plateText } from '../lib/verdict';
  */
 
 const VERDICTS = {
-  valid: ['Entered', 'bg-pass-50 text-pass-700'],
-  valid_override: ['Allowed', 'bg-warn-50 text-warn-700'],
-  already_used: ['Already used', 'bg-stop-50 text-stop-700'],
-  wrong_day: ['Wrong day', 'bg-warn-50 text-warn-700'],
-  wrong_slot: ['Outside slot', 'bg-warn-50 text-warn-700'],
-  unknown_ticket: ['No pass', 'bg-stop-50 text-stop-700'],
-  not_paid: ['Not paid', 'bg-stop-50 text-stop-700'],
+  valid: ['hEntered', 'bg-pass-50 text-pass-700'],
+  valid_override: ['hAllowed', 'bg-warn-50 text-warn-700'],
+  already_used: ['hAlreadyUsed', 'bg-stop-50 text-stop-700'],
+  wrong_day: ['hWrongDay', 'bg-warn-50 text-warn-700'],
+  wrong_slot: ['hOutsideSlot', 'bg-warn-50 text-warn-700'],
+  unknown_ticket: ['hNoPass', 'bg-stop-50 text-stop-700'],
+  not_paid: ['hNotPaid', 'bg-stop-50 text-stop-700'],
+  watch_blocked: ['watchBlockedChip', 'bg-stop-50 text-stop-700'],
 };
 
-const FILTERS = [['', 'All'], ['entered', 'Entered'], ['refused', 'Refused']];
-
-/** Days as people say them: Today, Yesterday, then the date. */
-function dayLabel(iso, today) {
-  const date = new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
-  if (date === today) return 'Today';
-  const yesterday = new Date(new Date(`${today}T00:00:00+05:30`).getTime() - 86400000)
-    .toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
-  if (date === yesterday) return 'Yesterday';
-  return new Date(iso).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short' });
-}
+const FILTERS = [['', 'all'], ['entered', 'entered'], ['refused', 'refused']];
 
 export default function History({ today }) {
+  const { t, locale } = useT();
   const [q, setQ] = useState('');
   const [term, setTerm] = useState('');
   const [verdict, setVerdict] = useState('');
@@ -48,6 +41,16 @@ export default function History({ today }) {
   const [error, setError] = useState(null);
   const [plate, setPlate] = useState(null);
   const alive = useRef(0);
+
+  /* Days as people say them: Today, Yesterday, then the date. */
+  const dayLabel = (iso) => {
+    const date = new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    if (date === today) return t('today');
+    const yesterday = new Date(new Date(`${today}T00:00:00+05:30`).getTime() - 86400000)
+      .toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    if (date === yesterday) return t('yesterday');
+    return new Date(iso).toLocaleDateString(locale, { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short' });
+  };
 
   /* Typing searches straight away; a breath's pause before asking the server. */
   useEffect(() => {
@@ -81,18 +84,18 @@ export default function History({ today }) {
     <div className="min-h-screen pb-24">
       <header className="sticky top-0 z-20 bg-brand px-4 pb-3 pt-3 text-white shadow-soft">
         <div className="mx-auto max-w-lg">
-          <div className="text-[15px] font-bold">Earlier checks</div>
+          <div className="text-[15px] font-bold">{t('earlierChecks')}</div>
           <input
             className="field mt-2 text-[17px] uppercase tracking-wide" value={q} inputMode="text"
             autoCapitalize="characters" autoCorrect="off" spellCheck={false}
-            placeholder="Number plate or pass number"
+            placeholder={t('historyPh')}
             onChange={(e) => setQ(e.target.value)}
           />
           <div className="mt-2 flex gap-2">
             {FILTERS.map(([key, label]) => (
               <button key={key} type="button" onClick={() => setVerdict(key)}
                 className={`flex-1 rounded-lg px-3 py-2 text-[14px] font-semibold ${verdict === key ? 'bg-white text-brand' : 'bg-white/15 text-white'}`}>
-                {label}
+                {t(label)}
               </button>
             ))}
           </div>
@@ -101,24 +104,24 @@ export default function History({ today }) {
 
       <main className="mx-auto max-w-lg px-4 pt-3">
         {error && <p className="mb-3 rounded-xl border border-stop-500/25 bg-stop-50 px-4 py-3 text-[15px] text-stop-700">{error}</p>}
-        {!checks && !error && <p className="py-10 text-center text-muted">Looking…</p>}
+        {!checks && !error && <p className="py-10 text-center text-muted">{t('looking')}</p>}
         {checks && checks.length === 0 && (
           <p className="card px-5 py-10 text-center text-[15px] text-muted">
-            {term ? 'Nothing checked at this gate matches that.' : 'No checks recorded at this gate yet.'}
+            {term ? t('nothingMatchesGate') : t('noChecksGate')}
           </p>
         )}
 
         <ul className="space-y-2">
           {(checks || []).map((c) => {
-            const [label, tone] = VERDICTS[c.verdict] || [c.verdict, 'bg-shell text-muted'];
-            const day = dayLabel(c.at, today);
+            const [labelKey, tone] = VERDICTS[c.verdict] || [null, 'bg-shell text-muted'];
+            const day = dayLabel(c.at);
             const header = day !== lastDay ? day : null;
             lastDay = day;
             return (
               <li key={c.id}>
                 {header && <div className="px-1 pb-1 pt-3 text-[13px] font-semibold uppercase tracking-wide text-muted">{header}</div>}
                 <button type="button" onClick={() => setPlate(c.regNo)}
-                  className="card flex w-full items-center gap-3 px-4 py-3 text-left active:scale-[.995]">
+                  className="card press flex w-full items-center gap-3 px-4 py-3 text-left">
                   <div className="min-w-0 flex-1">
                     <div className="plate text-[18px]">{plateText(c.regNo)}</div>
                     <div className="truncate text-[13px] text-muted">
@@ -126,7 +129,7 @@ export default function History({ today }) {
                       {c.seconds !== null && c.seconds !== undefined ? ` · ${c.seconds}s` : ''}
                     </div>
                   </div>
-                  <span className={`chip ${tone}`}>{label}</span>
+                  <span className={`chip ${tone}`}>{labelKey ? t(labelKey) : c.verdict}</span>
                 </button>
               </li>
             );
@@ -136,7 +139,7 @@ export default function History({ today }) {
         {hasMore && (
           <button type="button" className="mt-3 w-full rounded-xl border border-line bg-white px-4 py-3 text-[15px] font-semibold text-brand"
             disabled={loading} onClick={() => load(cursor)}>
-            {loading ? 'Loading…' : 'Show earlier checks'}
+            {loading ? t('loadingDots') : t('showEarlier')}
           </button>
         )}
       </main>

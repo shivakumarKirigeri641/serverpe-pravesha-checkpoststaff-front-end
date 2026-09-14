@@ -84,7 +84,17 @@ export const api = {
       .catch((e) => { if (e.body) return e.body; throw e; }),
   session: () => call('/session'),
   signOut: () => call('/session', { method: 'DELETE' }),
+  /* What this shift has done so far — shown before End shift is confirmed. */
+  shiftSummary: () => call('/shift/summary'),
   pulse: () => call('/pulse'),
+  /* An entry saved on the phone while there was no signal, sent now. */
+  entryOffline: (item) => call('/entry/offline', {
+    method: 'POST',
+    body: {
+      ticketNo: item.ticketNo, clientId: item.clientId, recordedAt: item.recordedAt,
+      override: item.override === true, typed: item.typed || null, elapsedMs: item.elapsedMs ?? null,
+    },
+  }),
   arrivals: (date) => call(`/arrivals${date ? `?date=${date}` : ''}`),
   search: (q) => call(`/search?q=${encodeURIComponent(q)}`),
   pass: (ticketNo) => call(`/pass/${encodeURIComponent(ticketNo)}`),

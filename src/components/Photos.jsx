@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
+import { useT } from '../lib/i18n.jsx';
 
 /*
  * Photographs on a pass, loaded only when somebody opens it.
@@ -10,9 +11,10 @@ import { api } from '../lib/api';
  * barrier the thing being checked is usually a reference number in a screenshot,
  * which is unreadable at thumbnail size.
  */
-const LABELS = { upi: 'Payment screen', vehicle: 'The vehicle', plate: 'Number plate', other: 'Photograph' };
+const LABELS = { upi: 'phUpi', vehicle: 'phVehicle', plate: 'phPlate', other: 'phOther' };
 
 export default function Photos({ photos }) {
+  const { t } = useT();
   const [urls, setUrls] = useState({});
   const [big, setBig] = useState(null);
 
@@ -33,6 +35,7 @@ export default function Photos({ photos }) {
   }, [photos]);
 
   if (!photos?.length) return null;
+  const labelOf = (kind) => t(LABELS[kind] || 'phOther');
 
   return (
     <>
@@ -41,10 +44,10 @@ export default function Photos({ photos }) {
           <button key={p.id} type="button" onClick={() => urls[p.id] && setBig(urls[p.id])}
             className="relative shrink-0">
             {urls[p.id]
-              ? <img src={urls[p.id]} alt={LABELS[p.kind] || 'Photograph'} className="h-24 w-24 rounded-xl border border-line object-cover" />
-              : <div className="grid h-24 w-24 place-items-center rounded-xl border border-line bg-shell text-[11px] text-muted">loading</div>}
+              ? <img src={urls[p.id]} alt={labelOf(p.kind)} className="h-24 w-24 rounded-xl border border-line object-cover" />
+              : <div className="grid h-24 w-24 place-items-center rounded-xl border border-line bg-shell text-[11px] text-muted">{t('phLoading')}</div>}
             <span className="absolute bottom-1 left-1 rounded bg-ink/70 px-1.5 py-0.5 text-[10px] font-bold text-white">
-              {LABELS[p.kind] || p.kind}
+              {labelOf(p.kind)}
             </span>
           </button>
         ))}

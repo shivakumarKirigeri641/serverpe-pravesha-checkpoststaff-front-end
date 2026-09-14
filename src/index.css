@@ -23,7 +23,25 @@
   .plate { @apply font-mono font-bold tracking-[0.06em]; }
   /* Safe area for phones with a home bar, so the action button is reachable. */
   .pad-bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem); }
+
+  /*
+   * MOVEMENT THAT ANSWERS A THUMB, AND NOTHING ELSE.
+   *
+   * This screen is held in one hand at a barrier, often in sunlight, with a
+   * queue behind. So a tap answers immediately — the card presses in under the
+   * finger — a new list settles in with one short rise, and nothing loops or
+   * flashes while somebody is reading a plate. Everything here is off for a
+   * phone set to reduce motion (see the rule at the bottom of this file).
+   */
+  .press { @apply transition duration-100 active:scale-[.985] active:brightness-[.98]; }
+  .list-in > * { animation: rise .22s ease-out both; }
+  .list-in > *:nth-child(2) { animation-delay: .03s; }
+  .list-in > *:nth-child(3) { animation-delay: .06s; }
+  .list-in > *:nth-child(4) { animation-delay: .09s; }
+  .list-in > *:nth-child(n+5) { animation-delay: .12s; }
 }
+
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

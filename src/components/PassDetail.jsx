@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import Photos from './Photos.jsx';
+import { useT } from '../lib/i18n.jsx';
 import { clock, plateText } from '../lib/verdict';
 
 /*
@@ -17,11 +18,9 @@ import { clock, plateText } from '../lib/verdict';
  */
 const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
 
-const day = (iso) => (iso
-  ? new Date(iso).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short' })
-  : null);
-
 export default function PassDetail({ pass, onClose }) {
+  const { t, locale } = useT();
+
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
@@ -31,6 +30,9 @@ export default function PassDetail({ pass, onClose }) {
   if (!pass) return null;
   const p = pass;
   const entered = p.entered;
+  const day = (iso) => (iso
+    ? new Date(iso).toLocaleDateString(locale, { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short' })
+    : null);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-ink/50 backdrop-blur-[2px]" onClick={onClose}>
@@ -44,68 +46,66 @@ export default function PassDetail({ pass, onClose }) {
               </div>
             </div>
             <span className={`chip shrink-0 ${entered ? 'bg-pass-500/15 text-pass-700' : 'bg-white text-muted'}`}>
-              {entered ? `In at ${clock(entered.at)}` : 'Expected'}
+              {entered ? t('inAt', { t: clock(entered.at) }) : t('expected')}
             </span>
           </div>
         </div>
 
         <div className="space-y-5 px-6 pt-4">
-          <Group title="The pass">
-            <Row label="Pass number" value={p.ticketNo} mono />
-            <Row label="For" value={`${day(`${p.travelDate}T06:00:00+05:30`)} · ${p.slot?.label}`} />
-            <Row label="Vehicle type" value={p.category?.label} />
+          <Group title={t('thePass')}>
+            <Row label={t('passNumber')} value={p.ticketNo} mono />
+            <Row label={t('forWord')} value={`${day(`${p.travelDate}T06:00:00+05:30`)} · ${p.slot?.label}`} />
+            <Row label={t('vehicleType')} value={p.category?.label} />
             {p.booked?.declared && (
-              <Row label="Type decided at the gate" value={p.booked.declaredReason || 'The register could not identify this vehicle'} />
+              <Row label={t('typeAtGate')} value={p.booked.declaredReason || t('registerCouldNot')} />
             )}
             {p.booked?.identity && (
-              <Row label={`Identified by ${p.booked.identity.kind?.replace(/_/g, ' ')}`} value={p.booked.identity.value} mono />
+              <Row label={t('identifiedBy', { k: p.booked.identity.kind?.replace(/_/g, ' ') })} value={p.booked.identity.value} mono />
             )}
             {p.moved && (
-              <Row label="Moved" value={`from ${p.moved.fromDate}${p.moved.fromSlot ? ` · ${p.moved.fromSlot}` : ''}`} />
+              <Row label={t('moved')} value={`${t('movedFrom', { d: p.moved.fromDate })}${p.moved.fromSlot ? ` · ${p.moved.fromSlot}` : ''}`} />
             )}
           </Group>
 
-          <Group title="Who booked it">
-            <Row label="Name" value={p.booked?.by || p.visitor || 'Not given'} />
-            <Row label="Mobile" value={p.mobile} mono />
-            <Row label="How" value={p.booked?.how} />
-            <Row label="When" value={p.booked?.at ? `${day(p.booked.at)} at ${clock(p.booked.at)}` : null} />
+          <Group title={t('whoBooked')}>
+            <Row label={t('name')} value={p.booked?.by || p.visitor || t('notGiven')} />
+            <Row label={t('mobile')} value={p.mobile} mono />
+            <Row label={t('how')} value={p.booked?.how} />
+            <Row label={t('when')} value={p.booked?.at ? t('dayAt', { d: day(p.booked.at), t: clock(p.booked.at) }) : null} />
           </Group>
 
-          <Group title="What was paid">
-            <Row label="Total" value={money(p.paid?.total)} />
-            <Row label="Entry fee" value={money(p.paid?.entry)} />
-            <Row label="Service fee and tax" value={money(p.paid?.fee)} />
-            <Row label="Paid by" value={p.paid?.method} />
-            <Row label="Reference" value={p.paid?.reference} mono />
-            <Row label="Paid at" value={p.paid?.at ? clock(p.paid.at) : null} />
+          <Group title={t('whatPaid')}>
+            <Row label={t('total')} value={money(p.paid?.total)} />
+            <Row label={t('entryFee')} value={money(p.paid?.entry)} />
+            <Row label={t('serviceFeeTax')} value={money(p.paid?.fee)} />
+            <Row label={t('paidBy')} value={p.paid?.method} />
+            <Row label={t('reference')} value={p.paid?.reference} mono />
+            <Row label={t('paidAt')} value={p.paid?.at ? clock(p.paid.at) : null} />
           </Group>
 
           {p.photos?.length > 0 && (
             <section>
-              <h3 className="mb-1.5 text-[12px] font-bold uppercase tracking-wide text-muted">
-                Photographs taken at the sale
-              </h3>
+              <h3 className="mb-1.5 text-[12px] font-bold uppercase tracking-wide text-muted">{t('photosSale')}</h3>
               <Photos photos={p.photos} />
             </section>
           )}
 
-          <Group title="At this gate">
+          <Group title={t('atGate')}>
             {entered
               ? (
                 <>
-                  <Row label="Entered" value={`${day(entered.at)} at ${clock(entered.at)}`} />
-                  <Row label="Checked by" value={entered.by} />
-                  <Row label="Gate" value={entered.gate} />
-                  <Row label="Times checked" value={String(p.checks || 1)} />
+                  <Row label={t('enteredWord')} value={t('dayAt', { d: day(entered.at), t: clock(entered.at) })} />
+                  <Row label={t('checkedBy')} value={entered.by} />
+                  <Row label={t('gate')} value={entered.gate} />
+                  <Row label={t('timesChecked')} value={String(p.checks || 1)} />
                 </>
               )
-              : <p className="text-[15px] text-muted">Not yet arrived.</p>}
+              : <p className="py-2.5 text-[15px] text-muted">{t('notArrived')}</p>}
           </Group>
         </div>
 
         <div className="px-6 pt-6">
-          <button type="button" className="btn-primary w-full" onClick={onClose}>Close</button>
+          <button type="button" className="btn-primary w-full" onClick={onClose}>{t('close')}</button>
         </div>
       </div>
     </div>

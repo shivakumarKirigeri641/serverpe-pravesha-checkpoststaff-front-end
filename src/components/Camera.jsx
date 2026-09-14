@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { api } from '../lib/api';
+import { useT } from '../lib/i18n.jsx';
 
 /*
  * A photograph taken at the barrier, sent as soon as it is taken.
@@ -45,15 +46,16 @@ function shrink(file) {
       try {
         resolve({ dataUrl: canvas.toDataURL('image/jpeg', QUALITY), width: w, height: h });
       } catch (e) {
-        reject(new Error('This phone would not let the app read the photograph.'));
+        reject(Object.assign(new Error('read_fail'), { key: 'readFail' }));
       }
     };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('That file is not a photograph.')); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(Object.assign(new Error('not_photo'), { key: 'notPhoto' })); };
     img.src = url;
   });
 }
 
 export default function Camera({ kind, label, hint, required = false, photos, onChange }) {
+  const { t } = useT();
   const input = useRef(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -69,7 +71,7 @@ export default function Camera({ kind, label, hint, required = false, photos, on
       const out = await api.uploadPhoto({ kind, image: small.dataUrl, width: small.width, height: small.height });
       onChange([...photos, { ...out.photo, preview: small.dataUrl }]);
     } catch (e) {
-      setError(e.message);
+      setError(e.key ? t(e.key) : e.message);
     } finally {
       setBusy(false);
       /* Same file twice — a retake of the same shot — must still fire onChange. */
@@ -80,7 +82,7 @@ export default function Camera({ kind, label, hint, required = false, photos, on
   return (
     <div>
       <label className="label">
-        {label}{required && <span className="text-stop-700"> — required</span>}
+        {label}{required && <span className="text-stop-700"> {t('required')}</span>}
       </label>
 
       {mine.length > 0 && (
@@ -89,9 +91,9 @@ export default function Camera({ kind, label, hint, required = false, photos, on
             <div key={p.id} className="relative shrink-0">
               <img src={p.preview} alt="" className="h-24 w-24 rounded-xl border border-line object-cover" />
               <span className="absolute bottom-1 left-1 rounded bg-ink/70 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                sent
+                {t('sent')}
               </span>
-              <button type="button" aria-label="Remove this photograph"
+              <button type="button" aria-label={t('removePhoto')}
                 onClick={() => onChange(photos.filter((x) => x.id !== p.id))}
                 className="absolute -right-1.5 -top-1.5 h-6 w-6 rounded-full bg-ink text-[13px] font-bold text-white">×</button>
             </div>
@@ -105,12 +107,12 @@ export default function Camera({ kind, label, hint, required = false, photos, on
       <button type="button" disabled={busy} onClick={() => input.current?.click()}
         className={`w-full rounded-xl border px-4 py-3 text-[15px] font-semibold ${
           mine.length ? 'border-line bg-white text-muted' : 'border-brand bg-brand/5 text-brand'}`}>
-        {busy ? 'Sending…' : mine.length ? 'Take another' : '📷  Take a photo'}
+        {busy ? t('sending') : mine.length ? t('takeAnother') : t('takePhoto')}
       </button>
 
       {error && (
         <p className="mt-2 rounded-xl border border-stop-500/25 bg-stop-50 px-4 py-2.5 text-[14px] text-stop-700">
-          {error} <button type="button" className="underline" onClick={() => input.current?.click()}>Try again</button>
+          {error} <button type="button" className="underline" onClick={() => input.current?.click()}>{t('tryAgain')}</button>
         </p>
       )}
 

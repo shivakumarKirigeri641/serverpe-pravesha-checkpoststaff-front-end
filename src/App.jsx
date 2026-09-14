@@ -4,6 +4,7 @@ import History from './pages/History.jsx';
 import Passes from './pages/Passes.jsx';
 import SignIn from './pages/SignIn.jsx';
 import { useSession } from './lib/session';
+import { useT } from './lib/i18n.jsx';
 
 /*
  * A gate phone is either on a shift or signing in to one. On a shift there are
@@ -14,6 +15,7 @@ import { useSession } from './lib/session';
  */
 export default function App() {
   const { state, me } = useSession();
+  const { t } = useT();
   const [tab, setTab] = useState('gate');
 
   if (state === 'checking') {
@@ -21,7 +23,7 @@ export default function App() {
       <div className="grid min-h-screen place-items-center px-6 text-center">
         <div>
           <img src="/icon-192.png" alt="" className="mx-auto h-14 w-14 rounded-2xl opacity-80" />
-          <p className="mt-4 text-muted">Checking your shift…</p>
+          <p className="mt-4 text-muted">{t('checkingShift')}</p>
         </div>
       </div>
     );
@@ -37,9 +39,9 @@ export default function App() {
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto flex max-w-lg">
-          <TabButton active={tab === 'gate'} onClick={() => setTab('gate')} label="Check" icon={<GateIcon />} />
-          <TabButton active={tab === 'passes'} onClick={() => setTab('passes')} label="Passes" icon={<PassIcon />} />
-          <TabButton active={tab === 'history'} onClick={() => setTab('history')} label="Earlier checks" icon={<HistoryIcon />} />
+          <TabButton active={tab === 'gate'} onClick={() => setTab('gate')} label={t('navCheck')} icon={<GateIcon />} />
+          <TabButton active={tab === 'passes'} onClick={() => setTab('passes')} label={t('navPasses')} icon={<PassIcon />} />
+          <TabButton active={tab === 'history'} onClick={() => setTab('history')} label={t('navHistory')} icon={<HistoryIcon />} />
         </div>
       </nav>
     </>
