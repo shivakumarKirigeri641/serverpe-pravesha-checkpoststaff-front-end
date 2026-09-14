@@ -46,17 +46,6 @@ export function SessionProvider({ children }) {
     return out;
   }, []);
 
-  const signIn = useCallback(async (mobile, pin, checkpostId) => {
-    const out = await api.signIn(mobile, pin, checkpostId);
-    if (out.ok) {
-      setToken(out.token);
-      setMe(out);
-      setState('ready');
-      setEndedNotice(null);
-    }
-    return out;
-  }, []);
-
   const signOut = useCallback(async () => {
     try { await api.signOut(); } catch { /* the shift ends locally regardless */ }
     setToken(null);
@@ -66,8 +55,8 @@ export function SessionProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ me, state, signIn, signInWithCode, requestCode, signOut, endedNotice }),
-    [me, state, signIn, signInWithCode, requestCode, signOut, endedNotice],
+    () => ({ me, state, signInWithCode, requestCode, signOut, endedNotice }),
+    [me, state, signInWithCode, requestCode, signOut, endedNotice],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

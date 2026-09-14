@@ -302,8 +302,8 @@ export default function Gate() {
         * End shift asks first.
         *
         * It sits a thumb's width from Sell a pass, on a phone held in one hand
-        * in the wind, and the cost of a mis-tap is a signed-out gate and a PIN
-        * to find again with vehicles waiting. So it is confirmed, and the button
+        * in the wind, and the cost of a mis-tap is a signed-out gate and a code
+        * to wait for with vehicles waiting. So it is confirmed, and the button
         * that confirms is not the one under the thumb.
         */}
       {ending && (
@@ -311,7 +311,7 @@ export default function Gate() {
           <div className="w-full rounded-t-3xl bg-white px-6 pb-8 pt-6" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-xl font-extrabold">End your shift?</h2>
             <p className="mt-2 text-[15px] text-muted">
-              This gate stops recording entries until somebody signs in again with their mobile number and PIN.
+              This gate stops recording entries until somebody signs in again with a code sent to their mobile number.
               {verified.length > 0 ? ` ${verified.length} vehicle${verified.length === 1 ? '' : 's'} verified on this phone will stay in Earlier checks.` : ''}
             </p>
             <button type="button" className="btn-quiet mt-5 w-full" onClick={() => setEnding(false)}>

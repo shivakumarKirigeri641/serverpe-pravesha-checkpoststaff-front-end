@@ -64,7 +64,7 @@ async function call(path, { method = 'GET', body, auth = true, timeoutMs = 12000
     throw new ApiError(data.message || 'Your shift has ended. Please sign in again.',
       { code: 'signed_out', status: 401, body: data });
   }
-  /* A refusal the screens must show (wrong PIN, locked, unknown pass) still
+  /* A refusal the screens must show (wrong code, unknown pass) still
      carries its body: the caller decides how to render it. */
   if (!res.ok && res.status !== 423) {
     throw new ApiError(data.message || 'Something went wrong. Please try again.',
@@ -82,14 +82,6 @@ export const api = {
   signInWithCode: (mobile, code, checkpostId) =>
     call('/session/verify', { method: 'POST', auth: false, body: { mobile, code, checkpostId } })
       .catch((e) => { if (e.body) return e.body; throw e; }),
-
-  signIn: (mobile, pin, checkpostId) =>
-    call('/session', { method: 'POST', auth: false, body: { mobile, pin, checkpostId } })
-      .catch((e) => {
-        /* Wrong PIN and locked are answers, not failures: hand the body back. */
-        if (e.body && (e.code === 'bad_credentials' || e.code === 'locked' || e.code === 'no_posting')) return e.body;
-        throw e;
-      }),
   session: () => call('/session'),
   signOut: () => call('/session', { method: 'DELETE' }),
   arrivals: (date) => call(`/arrivals${date ? `?date=${date}` : ''}`),
