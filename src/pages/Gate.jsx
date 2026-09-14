@@ -51,6 +51,9 @@ export default function Gate() {
   const [net, setNet] = useState({ queued: 0, problems: [], sending: false });
   const [tab, setTab] = useState('pending');
   const [showAllVerified, setShowAllVerified] = useState(false);
+  /* How much of the queue is drawn. Reset whenever the list underneath changes. */
+  const PAGE = 20;
+  const [showCount, setShowCount] = useState(PAGE);
   const [q, setQ] = useState('');
   const [results, setResults] = useState(null);
   const [searching, setSearching] = useState(false);
@@ -248,6 +251,22 @@ export default function Gate() {
   const list = searchingNow ? matches.filter(inTab) : (arrivals?.passes || []).filter(inTab);
   const otherTabMatches = searchingNow ? matches.filter((p) => !inTab(p)).length : 0;
 
+  /*
+   * A BUSY SUNDAY IS SIX HUNDRED PASSES, AND NOBODY SCROLLS SIX HUNDRED CARDS.
+   *
+   * The whole list used to be drawn: six hundred cards in the page, a scrollbar
+   * the size of a thread, and a phone that stutters on every redraw — while the
+   * vehicle actually at the barrier is found by typing four digits, never by
+   * scrolling. So a screenful is drawn and the rest waits behind a button.
+   *
+   * The full list stays in memory regardless: it is what answers a search
+   * instantly, and what answers it at all when the signal has gone. Only the
+   * drawing is cut.
+   */
+  useEffect(() => { setShowCount(PAGE); }, [tab, typed]);
+  const shown = searchingNow ? list : list.slice(0, showCount);
+  const moreBelow = list.length - shown.length;
+
   return (
     <div className="min-h-screen pb-24">
       {/*
@@ -387,7 +406,7 @@ export default function Gate() {
         )}
 
         <ul className="list-in space-y-2">
-          {list.map((p) => (
+          {shown.map((p) => (
             <li key={p.ticketNo}>
               <button type="button" onClick={() => setOpen({ ticketNo: p.ticketNo, typed: q.trim() || null, pass: p })}
                 className="card press flex w-full items-center gap-3 px-4 py-3.5 text-left">
@@ -420,6 +439,17 @@ export default function Gate() {
             </li>
           ))}
         </ul>
+
+        {moreBelow > 0 && (
+          <div className="mt-3 text-center">
+            <button type="button" onClick={() => setShowCount((c) => c + PAGE)} className="btn-quiet press w-full">
+              {t('showMoreVehicles', { n: Math.min(PAGE, moreBelow) })}
+            </button>
+            <p className="mt-2 text-[12.5px] text-muted">
+              {t('showingOfTotal', { shown: shown.length, n: list.length })}
+            </p>
+          </div>
+        )}
 
         {/*
          * WHAT THIS SHIFT HAS ALREADY DONE — UNDERNEATH, AND SHORT.
