@@ -322,12 +322,23 @@ export default function Gate() {
 
       <div className="bg-shell px-4 pb-2.5 pt-2.5">
         <div className="mx-auto max-w-lg">
-          <input
-            ref={searchRef} className="field text-[18px] uppercase tracking-wide" autoFocus
-            placeholder={t('searchPh')} value={q} inputMode="text"
-            autoCapitalize="characters" autoCorrect="off" spellCheck={false}
-            onChange={(e) => setQ(e.target.value)}
-          />
+          {/* Clear sits beside the box, not inside it: a thumb in gloves or rain
+              needs a real target, and the next vehicle is the next four digits. */}
+          <div className="flex gap-2">
+            <input
+              ref={searchRef} className="field min-w-0 flex-1 text-[18px] uppercase tracking-wide" autoFocus
+              placeholder={t('searchPh')} value={q} inputMode="text"
+              autoCapitalize="characters" autoCorrect="off" spellCheck={false}
+              onChange={(e) => setQ(e.target.value)}
+            />
+            {q && (
+              <button type="button" aria-label={t('clearSearch')}
+                onClick={() => { setQ(''); searchRef.current?.focus(); }}
+                className="press shrink-0 rounded-xl border border-line bg-white px-4 text-[15px] font-bold text-ink">
+                ✕ {t('clearSearch')}
+              </button>
+            )}
+          </div>
           {/* The tabs sit with the search box, not below the day's history:
               they are how a staff member says which list they are searching. */}
           <div className="mt-2.5 flex gap-2">
