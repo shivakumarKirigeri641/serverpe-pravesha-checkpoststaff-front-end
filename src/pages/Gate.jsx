@@ -479,7 +479,8 @@ export default function Gate() {
                 className="card press flex w-full items-center gap-3 px-4 py-3.5 text-left">
                 <div className="min-w-0 flex-1">
                   <div className="plate text-[19px]">
-                    {plateText(p.regNo)}
+                    {/* A per-person pass (056) has no plate: it is read as people. */}
+                    {p.passKind === 'person' ? t('peopleCount', { n: p.persons || 1 }) : plateText(p.regNo)}
                     {p.watch && (
                       <span className={`chip ml-2 align-middle font-sans ${p.watch.level === 'block' ? 'bg-stop-600 text-white' : 'bg-ask-500 text-white'}`}>
                         ⚠ {p.watch.level === 'block' ? t('watchBlockedChip') : t('watchChip')}
@@ -490,8 +491,9 @@ export default function Gate() {
                       pass is for. The fare category alone ("Car / Jeep / SUV")
                       cannot be compared with the vehicle in front of you. */}
                   <div className="truncate text-[13.5px] font-medium text-ink/85">
-                    {[p.details?.make, p.details?.model, p.details?.variant].filter(Boolean).join(' ') || p.vehicle || '—'}
-                    {p.details?.colour ? ` · ${p.details.colour}` : ''}
+                    {p.passKind === 'person'
+                      ? t('perPersonPass')
+                      : `${[p.details?.make, p.details?.model, p.details?.variant].filter(Boolean).join(' ') || p.vehicle || '—'}${p.details?.colour ? ` · ${p.details.colour}` : ''}`}
                   </div>
                   <div className="truncate text-[12.5px] text-muted">
                     {p.details?.type ? `${p.details.type} · ` : ''}{p.category?.label}

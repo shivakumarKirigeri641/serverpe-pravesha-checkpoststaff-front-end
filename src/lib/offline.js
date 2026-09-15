@@ -146,11 +146,13 @@ const newId = () => {
 };
 
 /** Keep an entry on the phone, to be sent when the signal is back. */
-export function enqueue({ pass, override = false, typed = null, elapsedMs = null }) {
+export function enqueue({ pass, override = false, typed = null, elapsedMs = null, persons = null }) {
   const item = {
     clientId: newId(),
     ticketNo: pass.ticketNo,
     regNo: pass.regNo,
+    /* On a per-person pass (056), how many went in. */
+    persons,
     type: pass.category?.label || null,
     override: override === true,
     typed,

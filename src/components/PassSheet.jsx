@@ -38,6 +38,9 @@ export default function PassSheet({ ticketNo, typed, fallbackPass = null, onClos
   const [result, setResult] = useState(null);  // what the entry call answered
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  /* On a per-person pass (056), how many of the booked people are going in.
+     Null until the staff member changes it, when everybody booked is assumed. */
+  const [entering, setEntering] = useState(null);
   const announced = useRef(null);
 
   useEffect(() => {
@@ -95,7 +98,8 @@ export default function PassSheet({ ticketNo, typed, fallbackPass = null, onClos
   /* Keep the entry on the phone, to be sent when the signal is back. */
   function keepOnPhone(override) {
     const thePass = data?.pass || fallbackPass;
-    const item = enqueue({ pass: thePass, override, typed, elapsedMs: Date.now() - openedAt });
+    const people = thePass?.passKind === 'person' ? (entering ?? thePass.persons ?? 1) : null;
+    const item = enqueue({ pass: thePass, override, typed, elapsedMs: Date.now() - openedAt, persons: people });
     const out = {
       ok: true, offline: true, ticketNo,
       verdict: override ? 'valid_override' : 'valid',
@@ -115,7 +119,9 @@ export default function PassSheet({ ticketNo, typed, fallbackPass = null, onClos
       return;
     }
     try {
-      const out = await api.entry(ticketNo, { override, typed, elapsedMs: Date.now() - openedAt });
+      const onPass = data?.pass || fallbackPass;
+      const people = onPass?.passKind === 'person' ? (entering ?? onPass.persons ?? 1) : null;
+      const out = await api.entry(ticketNo, { override, typed, elapsedMs: Date.now() - openedAt, persons: people });
       setResult(out);
       if (out.ok) {
         signal('go');
@@ -210,13 +216,17 @@ export default function PassSheet({ ticketNo, typed, fallbackPass = null, onClos
 
             {pass && (
               <div className="px-6 py-5">
-                <div className="plate text-3xl">{plateText(pass.regNo)}</div>
+                <div className="plate text-3xl">
+                  {pass.passKind === 'person' ? t('peopleCount', { n: pass.persons || 1 }) : plateText(pass.regNo)}
+                </div>
                 {/* What is in front of the staff member, in the words they can
                     check against the vehicle: make, model, variant, then what
                     the register calls it — and only then the fare category. */}
                 <div className="mt-1 text-[16px] font-semibold text-ink/85">
-                  {[pass.details?.make, pass.details?.model, pass.details?.variant].filter(Boolean).join(' ')
-                    || pass.vehicle?.description || (typeof pass.vehicle === 'string' ? pass.vehicle : '') || '—'}
+                  {pass.passKind === 'person'
+                    ? t('perPersonPass')
+                    : [pass.details?.make, pass.details?.model, pass.details?.variant].filter(Boolean).join(' ')
+                      || pass.vehicle?.description || (typeof pass.vehicle === 'string' ? pass.vehicle : '') || '—'}
                 </div>
                 <div className="mt-0.5 text-[14px] text-muted">
                   {[pass.details?.type, pass.details?.colour, pass.details?.fuel, pass.category?.label]
@@ -237,6 +247,22 @@ export default function PassSheet({ ticketNo, typed, fallbackPass = null, onClos
             {error && <p className="mx-6 mb-3 rounded-xl border border-stop-500/25 bg-stop-50 px-4 py-3 text-[15px] text-stop-700">{error}</p>}
 
             <div className="space-y-2 px-6">
+              {/* A per-person pass (056): fewer than were booked may walk in, never more. */}
+              {pass?.passKind === 'person' && canRecord && !done && (
+                <div className="rounded-xl border border-line bg-white px-4 py-3">
+                  <div className="text-[13px] text-muted">{t('howManyEntering')}</div>
+                  <div className="mt-2 flex items-center gap-3">
+                    <button type="button" className="btn-quiet !px-5 !py-2 text-[22px] font-black"
+                      disabled={(entering ?? pass.persons ?? 1) <= 1}
+                      onClick={() => setEntering(Math.max(1, (entering ?? pass.persons ?? 1) - 1))}>−</button>
+                    <div className="flex-1 text-center text-[30px] font-black">{entering ?? pass.persons ?? 1}</div>
+                    <button type="button" className="btn-quiet !px-5 !py-2 text-[22px] font-black"
+                      disabled={(entering ?? pass.persons ?? 1) >= (pass.persons ?? 1)}
+                      onClick={() => setEntering(Math.min(pass.persons ?? 1, (entering ?? pass.persons ?? 1) + 1))}>+</button>
+                  </div>
+                  <div className="mt-1 text-center text-[12.5px] text-muted">{t('bookedForN', { n: pass.persons ?? 1 })}</div>
+                </div>
+              )}
               {canRecord && (
                 <button type="button" className={needsOverride ? 'btn w-full bg-ask-500 py-4 text-[17px] text-white' : 'btn-go w-full'}
                   disabled={busy} onClick={() => record(needsOverride)}>
@@ -262,7 +288,11 @@ export default function PassSheet({ ticketNo, typed, fallbackPass = null, onClos
           <div>
             <div className="mx-auto grid h-32 w-32 place-items-center rounded-full bg-white/20 text-[80px] font-black leading-none">✓</div>
             <div className="mt-5 text-[30px] font-black">{t('entryRecordedTitle')}</div>
-            {pass && <div className="plate mt-2 text-[34px]">{plateText(pass.regNo)}</div>}
+            {pass && (
+              <div className="plate mt-2 text-[34px]">
+                {pass.passKind === 'person' ? t('peopleCount', { n: entering ?? pass.persons ?? 1 }) : plateText(pass.regNo)}
+              </div>
+            )}
             <div className="mt-2 text-[18px] font-semibold text-white/90">{t('letThrough')} · {clock(result.usedAt)}</div>
             {result.offline && (
               <div className="mx-auto mt-4 max-w-xs rounded-xl bg-black/20 px-4 py-2 text-[15px] font-semibold">📵 {t('savedOffline')}</div>

@@ -29,6 +29,9 @@ const S = {
     onDuty: 'on duty', sellPass: 'Sell a pass', endShift: 'End shift',
     expected: 'Expected', entered: 'Entered', stillToCome: 'Still to come',
     searchPh: 'Vehicle number or pass number', searchHint: 'Type the last 4 digits of the number plate.',
+    /* Per-person passes: no vehicle, a number of people instead (056). */
+    peopleCount: '{n} people', perPersonPass: 'Per-person pass',
+    howManyEntering: 'How many are entering?', bookedForN: 'Booked for {n}',
     matchOne: '{n} match', matchMany: '{n} matches', stillLooking: 'still looking',
     verifiedShift: 'Verified this shift', passSold: 'pass sold', entryRecorded: 'entry recorded',
     showAllChecked: 'Show all {n}', showFewerChecked: 'Show fewer', expectedToday: '{n} expected today',
@@ -150,6 +153,8 @@ const S = {
     onDuty: 'ಕರ್ತವ್ಯದಲ್ಲಿ', sellPass: 'ಪಾಸ್ ಮಾರಾಟ', endShift: 'ಶಿಫ್ಟ್ ಮುಗಿಸಿ',
     expected: 'ನಿರೀಕ್ಷಿತ', entered: 'ಪ್ರವೇಶಿಸಿದವು', stillToCome: 'ಬರಬೇಕಾದವು',
     searchPh: 'ವಾಹನ ಸಂಖ್ಯೆ ಅಥವಾ ಪಾಸ್ ಸಂಖ್ಯೆ', searchHint: 'ನಂಬರ್ ಪ್ಲೇಟ್‌ನ ಕೊನೆಯ 4 ಅಂಕಿಗಳನ್ನು ಟೈಪ್ ಮಾಡಿ.',
+    peopleCount: '{n} ಜನರು', perPersonPass: 'ಪ್ರತಿ ವ್ಯಕ್ತಿಗೆ ಪಾಸ್',
+    howManyEntering: 'ಎಷ್ಟು ಜನ ಪ್ರವೇಶಿಸುತ್ತಿದ್ದಾರೆ?', bookedForN: '{n} ಜನರಿಗೆ ಬುಕ್',
     matchOne: '{n} ಹೊಂದಾಣಿಕೆ', matchMany: '{n} ಹೊಂದಾಣಿಕೆಗಳು', stillLooking: 'ಇನ್ನೂ ಹುಡುಕಲಾಗುತ್ತಿದೆ',
     verifiedShift: 'ಈ ಶಿಫ್ಟ್‌ನಲ್ಲಿ ಪರಿಶೀಲಿಸಿದವು', passSold: 'ಪಾಸ್ ಮಾರಾಟ', entryRecorded: 'ಪ್ರವೇಶ ದಾಖಲಾಗಿದೆ',
     showAllChecked: 'ಎಲ್ಲಾ {n} ತೋರಿಸಿ', showFewerChecked: 'ಕಡಿಮೆ ತೋರಿಸಿ', expectedToday: 'ಇಂದು {n} ನಿರೀಕ್ಷಿತ',

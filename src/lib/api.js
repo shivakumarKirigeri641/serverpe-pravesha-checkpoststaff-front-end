@@ -93,13 +93,15 @@ export const api = {
     body: {
       ticketNo: item.ticketNo, clientId: item.clientId, recordedAt: item.recordedAt,
       override: item.override === true, typed: item.typed || null, elapsedMs: item.elapsedMs ?? null,
+      /* How many came in on a per-person pass (056); absent on a vehicle pass. */
+      persons: item.persons ?? null,
     },
   }),
   arrivals: (date) => call(`/arrivals${date ? `?date=${date}` : ''}`),
   search: (q) => call(`/search?q=${encodeURIComponent(q)}`),
   pass: (ticketNo) => call(`/pass/${encodeURIComponent(ticketNo)}`),
-  entry: (ticketNo, { override = false, typed = null, elapsedMs = null } = {}) =>
-    call('/entry', { method: 'POST', body: { ticketNo, override, typed, elapsedMs } }),
+  entry: (ticketNo, { override = false, typed = null, elapsedMs = null, persons = null } = {}) =>
+    call('/entry', { method: 'POST', body: { ticketNo, override, typed, elapsedMs, persons } }),
   recent: () => call('/recent'),
   history: ({ q = '', verdict = '', before = null, limit = 30 } = {}) => {
     const qs = new URLSearchParams({ limit: String(limit) });
