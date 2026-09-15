@@ -53,22 +53,44 @@ export function saveArrivals(data) {
   if (data && Array.isArray(data.passes)) write(KEYS.arrivals, { savedAt: new Date().toISOString(), data });
 }
 
+/**
+ * A list of passes, with anything recorded offline and not sent yet shown as
+ * entered. Applied to the server's fresh answer directly — not to a copy read
+ * back out of storage, which is the old list whenever that write failed.
+ */
+export function withQueue(data) {
+  if (!data || !Array.isArray(data.passes)) return data;
+  const waiting = new Map(queue().map((q) => [q.ticketNo, q]));
+  if (!waiting.size) return data;
+  const passes = data.passes.map((p) => (waiting.has(p.ticketNo) && p.status !== 'used'
+    ? { ...p, status: 'used', usedAt: waiting.get(p.ticketNo).recordedAt, savedOffline: true }
+    : p));
+  const entered = passes.filter((p) => p.status === 'used').length;
+  return { ...data, passes, totals: { ...(data.totals || {}), expected: passes.length, entered, pending: passes.length - entered } };
+}
+
 /** The saved list, with anything recorded offline already shown as entered. */
 export function savedArrivals() {
   const saved = read(KEYS.arrivals, null);
   if (!saved || !saved.data) return null;
-  const waiting = new Map(queue().map((q) => [q.ticketNo, q]));
-  const passes = saved.data.passes.map((p) => (waiting.has(p.ticketNo) && p.status !== 'used'
-    ? { ...p, status: 'used', usedAt: waiting.get(p.ticketNo).recordedAt, savedOffline: true }
-    : p));
+  return { ...withQueue(saved.data), savedAt: saved.savedAt, fromPhone: true };
+}
+
+/**
+ * One pass shown as entered straight away, before any reload confirms it. The
+ * vehicle is already through the barrier; the list should say so at once.
+ */
+export function markEntered(data, ticketNo, usedAt) {
+  if (!data || !Array.isArray(data.passes) || !ticketNo) return data;
+  let changed = false;
+  const passes = data.passes.map((p) => {
+    if (p.ticketNo !== ticketNo || p.status === 'used') return p;
+    changed = true;
+    return { ...p, status: 'used', usedAt: usedAt || new Date().toISOString() };
+  });
+  if (!changed) return data;
   const entered = passes.filter((p) => p.status === 'used').length;
-  return {
-    ...saved.data,
-    passes,
-    totals: { ...(saved.data.totals || {}), expected: passes.length, entered, pending: passes.length - entered },
-    savedAt: saved.savedAt,
-    fromPhone: true,
-  };
+  return { ...data, passes, totals: { ...(data.totals || {}), entered, pending: passes.length - entered } };
 }
 
 /* ─────────────────────────────────────────────────── a verdict, offline */

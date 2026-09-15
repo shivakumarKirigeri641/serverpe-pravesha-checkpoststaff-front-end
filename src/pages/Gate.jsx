@@ -3,7 +3,7 @@ import { api } from '../lib/api';
 import { useSession } from '../lib/session';
 import { LangToggle, useT } from '../lib/i18n.jsx';
 import { setSoundOn, soundOn } from '../lib/feedback';
-import { dismissProblem, saveArrivals, savedArrivals, sendNow, subscribe } from '../lib/offline';
+import { dismissProblem, markEntered, saveArrivals, savedArrivals, sendNow, subscribe, withQueue } from '../lib/offline';
 import { batteryWarning, useBattery, useDaylight, useWakeLock } from '../lib/device';
 import PassSheet from '../components/PassSheet.jsx';
 import SellSheet from '../components/SellSheet.jsx';
@@ -79,24 +79,47 @@ export default function Gate() {
 
 
 
+  /*
+   * ENTERED MEANS ENTERED, AT ONCE.
+   *
+   * A vehicle approved here moves to Entered the moment the entry is recorded,
+   * and stays there. It used to wait for the list to reload — and a reload can
+   * lose that race: one already on its way from before the tap, a server that is
+   * restarting, a slow answer, the phone's saved copy used instead. Each left a
+   * vehicle that had gone through sitting under "Still to come" (reported by the
+   * user, 2026-09-15). Entries made on this screen are remembered and laid over
+   * every list that arrives, until the server's own list shows them as used.
+   */
+  const recent = useRef(new Map());
+  const withRecent = useCallback((data) => {
+    if (!data || !Array.isArray(data.passes)) return data;
+    let next = data;
+    for (const [ticketNo, at] of recent.current) {
+      const onServer = data.passes.find((p) => p.ticketNo === ticketNo);
+      if (onServer && onServer.status === 'used' && !data.fromPhone) recent.current.delete(ticketNo);
+      else next = markEntered(next, ticketNo, at);
+    }
+    return next;
+  }, []);
+
   const load = useCallback(async ({ quiet = false } = {}) => {
     try {
       const d = await api.arrivals();
       saveArrivals(d);
       /* Anything recorded offline that has not been sent yet still shows as in. */
-      setArrivals(savedArrivals() || d);
+      setArrivals(withRecent(withQueue(d)));
       setOffline(false);
       if (!quiet) setError(null);
     } catch (e) {
       if (e.offline) {
         const saved = savedArrivals();
         setOffline(true);
-        if (saved) { setArrivals(saved); setError(null); } else if (!quiet) setError(t('offlineNoList'));
+        if (saved) { setArrivals(withRecent(saved)); setError(null); } else if (!quiet) setError(t('offlineNoList'));
       } else if (!quiet) {
         setError(e.message);
       }
     }
-  }, [t]);
+  }, [t, withRecent]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -104,7 +127,7 @@ export default function Gate() {
   useEffect(() => subscribe(setNet), []);
   useEffect(() => {
     /* An entry was kept or sent: redraw the list from what the phone knows. */
-    if (offline) { const saved = savedArrivals(); if (saved) setArrivals(saved); }
+    if (offline) { const saved = savedArrivals(); if (saved) setArrivals(withRecent(saved)); }
   }, [net.queued, offline]);
 
   /*
@@ -203,8 +226,13 @@ export default function Gate() {
   };
 
   const onRecorded = (out) => {
+    const ticketNo = out.pass?.ticketNo || out.ticketNo;
+    if (ticketNo) {
+      recent.current.set(ticketNo, out.usedAt || new Date().toISOString());
+      setArrivals((a) => markEntered(a, ticketNo, out.usedAt));
+    }
     remember({
-      ticketNo: out.pass?.ticketNo || out.ticketNo,
+      ticketNo,
       regNo: out.pass?.regNo,
       at: out.usedAt,
       override: out.verdict === 'valid_override',
