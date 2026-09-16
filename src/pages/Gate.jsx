@@ -230,6 +230,11 @@ export default function Gate() {
     if (ticketNo) {
       recent.current.set(ticketNo, out.usedAt || new Date().toISOString());
       setArrivals((a) => markEntered(a, ticketNo, out.usedAt));
+      /* The vehicle is seen to move (user, 2026-09-16): the screen goes to
+         "Entered", where it now sits at the top, lit for a few seconds. On
+         "Still to come" it used to simply vanish. The search box is still
+         ready for the next plate, and a search covers both lists anyway. */
+      setTab('entered');
     }
     remember({
       ticketNo,
@@ -277,18 +282,26 @@ export default function Gate() {
   const searchingNow = typed.length > 0;
   const matches = searchingNow ? merged() : [];
   /*
-   * TYPING SEARCHES THE TAB THE STAFF MEMBER IS IN.
+   * TYPING SEARCHES BOTH LISTS (user, 2026-09-16).
    *
-   * On "Still to come" they are looking for the vehicle at the barrier, and a
-   * line for one that already went through is one more thing to read past with
-   * a queue waiting. On "Entered" they are answering "did that car go through?",
-   * and the same search must find exactly those. So the tab decides, the tabs
-   * stay on screen while typing, and whatever matched in the other one is
-   * counted underneath so nothing is ever simply missing.
+   * Four digits or a plate finds the vehicle whether it has come through or
+   * not, and each row says which: "Expected" or "Checked in 10:42". It used to
+   * search only the tab that was open, and on "Still to come" a vehicle that had
+   * already entered answered "No pass found — Sell a pass for this vehicle":
+   * an invitation to sell a second pass to someone who already has one. Now
+   * "No pass found" means exactly that. Vehicles still to come are listed
+   * first, because they are the ones a barrier is waiting on.
+   *
+   * The tabs sort the day's list when nothing is typed.
    */
   const inTab = (p) => (tab === 'pending' ? p.status !== 'used' : p.status === 'used');
-  const list = searchingNow ? matches.filter(inTab) : (arrivals?.passes || []).filter(inTab);
-  const otherTabMatches = searchingNow ? matches.filter((p) => !inTab(p)).length : 0;
+  /* Newest entry first on "Entered", so the one just recorded is at the top. */
+  const newestIn = (a, b) => String(b.usedAt || '').localeCompare(String(a.usedAt || ''));
+  const list = searchingNow
+    ? [...matches.filter((p) => p.status !== 'used'), ...matches.filter((p) => p.status === 'used')]
+    : tab === 'entered'
+      ? (arrivals?.passes || []).filter(inTab).sort(newestIn)
+      : (arrivals?.passes || []).filter(inTab);
 
   /*
    * A BUSY SUNDAY IS SIX HUNDRED PASSES, AND NOBODY SCROLLS SIX HUNDRED CARDS.
@@ -389,12 +402,16 @@ export default function Gate() {
           {/* The tabs sit with the search box, not below the day's history:
               they are how a staff member says which list they are searching. */}
           <div className="mt-2.5 flex gap-2">
-            <Tab active={tab === 'pending'} onClick={() => setTab('pending')} label={`${t('stillToCome')} (${totals?.pending ?? 0})`} />
-            <Tab active={tab === 'entered'} onClick={() => setTab('entered')} label={`${t('entered')} (${totals?.entered ?? 0})`} />
+            {/* While searching, neither tab is lit: the search covers both.
+                Tapping one goes back to that list. */}
+            <Tab active={!searchingNow && tab === 'pending'} onClick={() => { setQ(''); setTab('pending'); }} label={`${t('stillToCome')} (${totals?.pending ?? 0})`} />
+            <Tab active={!searchingNow && tab === 'entered'} onClick={() => { setQ(''); setTab('entered'); }} label={`${t('entered')} (${totals?.entered ?? 0})`} />
           </div>
           <p className="mt-1.5 px-1 text-[12.5px] text-muted">
             {!searchingNow ? t('searchHint')
-              : `${t(list.length === 1 ? 'matchOne' : 'matchMany', { n: list.length })}${searching ? ` · ${t('stillLooking')}` : ''}`}
+              : `${t(list.length === 1 ? 'matchOne' : 'matchMany', { n: list.length })}${
+                list.length ? ` · ${t('matchSplit', { pending: list.filter((p) => p.status !== 'used').length, entered: list.filter((p) => p.status === 'used').length })}` : ''
+              }${searching ? ` · ${t('stillLooking')}` : ''}`}
           </p>
         </div>
       </div>
@@ -447,18 +464,6 @@ export default function Gate() {
 
         {!arrivals && !error && <p className="py-10 text-center text-muted">{t('loadingToday')}</p>}
 
-        {/* What matched in the other tab: counted, and one tap away. */}
-        {otherTabMatches > 0 && (
-          <button type="button" onClick={() => setTab(tab === 'pending' ? 'entered' : 'pending')}
-            className="press mb-3 flex w-full items-center justify-between gap-3 rounded-xl border border-line bg-white px-4 py-2.5 text-left text-[13px] text-muted">
-            <span>
-              {t(otherTabMatches === 1 ? 'otherTabOne' : 'otherTabMany',
-                { n: otherTabMatches, tab: tab === 'pending' ? t('entered') : t('stillToCome') })}
-            </span>
-            <span className="shrink-0 font-semibold text-brand">{t('showThem')} →</span>
-          </button>
-        )}
-
         {arrivals && list.length === 0 && (
           <div className="card px-5 py-8 text-center">
             <p className="text-[15px] text-muted">
@@ -476,7 +481,8 @@ export default function Gate() {
           {shown.map((p) => (
             <li key={p.ticketNo}>
               <button type="button" onClick={() => setOpen({ ticketNo: p.ticketNo, typed: q.trim() || null, pass: p })}
-                className="card press flex w-full items-center gap-3 px-4 py-3.5 text-left">
+                className={`card press flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors duration-700 ${
+                  p.ticketNo === justNow ? '!border-brand bg-brand/10 ring-2 ring-brand/30' : ''}`}>
                 <div className="min-w-0 flex-1">
                   <div className="plate text-[19px]">
                     {/* A per-person pass (056) has no plate: it is read as people. */}
@@ -502,7 +508,7 @@ export default function Gate() {
                   </div>
                 </div>
                 {p.status === 'used'
-                  ? <span className="chip bg-pass-50 text-pass-700">{p.savedOffline ? '📵 ' : ''}{t('inAt', { t: clock(p.usedAt) })}</span>
+                  ? <span className="chip bg-brand/10 text-brand">{p.savedOffline ? '📵 ' : ''}{t('inAt', { t: clock(p.usedAt) })}</span>
                   : <span className="chip bg-shell text-muted">{t('expected')}</span>}
               </button>
             </li>

@@ -152,7 +152,7 @@ export default function Passes({ today }) {
                   </div>
                 </div>
                 {p.entered
-                  ? <span className="chip shrink-0 bg-pass-50 text-pass-700">{t('inAt', { t: clock(p.entered.at) })}</span>
+                  ? <span className="chip shrink-0 bg-brand/10 text-brand">{t('inAt', { t: clock(p.entered.at) })}</span>
                   : <span className="chip shrink-0 bg-shell text-muted">{p.slot?.label?.split(' ')[0] || t('expected')}</span>}
               </button>
             </li>

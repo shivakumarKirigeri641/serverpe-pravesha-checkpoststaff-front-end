@@ -3,17 +3,27 @@
  *
  * `action` is the sentence a person acts on — the API's message explains the
  * fact ("this pass was for 9 September"), this says what to do about it. Tones
- * are only three, deliberately: go, stop, ask. Anything subtler is unreadable
- * from a metre away in the rain.
+ * are only five, deliberately: act (valid, still to record), go (recorded),
+ * stop, ask, and done for a vehicle that is already in. Anything subtler is unreadable from a metre away in the rain.
  *
  * Both languages live here, so a verdict can never be translated in one place
  * and forgotten in another.
  */
 
 export const VERDICTS = {
-  valid: { tone: 'go', title: 'Valid pass', action: 'Record the entry and let them through.' },
+  /* Blue, not green: nothing has happened yet. Green used to read as "done",
+     and a staff member would wave the vehicle through without tapping, so the
+     entry was never recorded (user, 2026-09-16). */
+  valid: { tone: 'act', title: 'Valid pass', action: 'Tap RECORD ENTRY below, then let them through.' },
+  /* After the tap: this is the green one. */
+  recorded: { tone: 'go', title: 'Entry recorded', action: 'Let them through.' },
   valid_override: { tone: 'go', title: 'Entry recorded', action: 'Recorded outside the slot, with your name on it.' },
-  already_used: { tone: 'stop', title: 'Already used', action: 'This pass was used once. One pass is one entry.' },
+  /* Checked in (user, 2026-09-16). Opening an entered vehicle from the list is
+     the ordinary thing a staff member does all day, and it used to answer in the
+     red of a refused pass. It is not a refusal: the vehicle is in, and the
+     screen says so calmly. It is still not an entry to make again — there is no
+     record button, and the sentence says why. */
+  already_used: { tone: 'done', title: 'Checked in', action: 'Already entered. One pass is one entry — do not record it again.' },
   wrong_day: { tone: 'stop', title: 'Wrong date', action: 'They need a pass booked for today.' },
   wrong_place: { tone: 'stop', title: 'Wrong destination', action: 'This pass belongs to another checkpost.' },
   not_paid: { tone: 'stop', title: 'Not paid', action: 'Payment never completed. Ask them to book again on WhatsApp.' },
@@ -31,9 +41,10 @@ export const VERDICTS = {
 };
 
 const VERDICTS_KN = {
-  valid: { title: 'ಮಾನ್ಯ ಪಾಸ್', action: 'ಪ್ರವೇಶ ದಾಖಲಿಸಿ ಒಳಗೆ ಬಿಡಿ.' },
+  valid: { title: 'ಮಾನ್ಯ ಪಾಸ್', action: 'ಕೆಳಗಿನ "ಪ್ರವೇಶ ದಾಖಲಿಸಿ" ಒತ್ತಿ, ನಂತರ ಒಳಗೆ ಬಿಡಿ.' },
+  recorded: { title: 'ಪ್ರವೇಶ ದಾಖಲಾಗಿದೆ', action: 'ಒಳಗೆ ಬಿಡಿ.' },
   valid_override: { title: 'ಪ್ರವೇಶ ದಾಖಲಾಗಿದೆ', action: 'ಸ್ಲಾಟ್ ಹೊರಗೆ, ನಿಮ್ಮ ಹೆಸರಿನಲ್ಲಿ ದಾಖಲಾಗಿದೆ.' },
-  already_used: { title: 'ಈಗಾಗಲೇ ಬಳಸಲಾಗಿದೆ', action: 'ಈ ಪಾಸ್ ಒಮ್ಮೆ ಬಳಸಲಾಗಿದೆ. ಒಂದು ಪಾಸ್ ಒಂದೇ ಪ್ರವೇಶ.' },
+  already_used: { title: 'ಚೆಕ್-ಇನ್ ಆಗಿದೆ', action: 'ಈಗಾಗಲೇ ಪ್ರವೇಶಿಸಿದೆ. ಒಂದು ಪಾಸ್ ಒಂದೇ ಪ್ರವೇಶ — ಮತ್ತೆ ದಾಖಲಿಸಬೇಡಿ.' },
   wrong_day: { title: 'ತಪ್ಪು ದಿನಾಂಕ', action: 'ಇಂದಿಗೆ ಬುಕ್ ಮಾಡಿದ ಪಾಸ್ ಬೇಕು.' },
   wrong_place: { title: 'ತಪ್ಪು ತಾಣ', action: 'ಈ ಪಾಸ್ ಬೇರೆ ಚೆಕ್‌ಪೋಸ್ಟ್‌ಗೆ ಸೇರಿದೆ.' },
   not_paid: { title: 'ಪಾವತಿಯಾಗಿಲ್ಲ', action: 'ಪಾವತಿ ಪೂರ್ಣಗೊಂಡಿಲ್ಲ. ವಾಟ್ಸ್‌ಆ್ಯಪ್‌ನಲ್ಲಿ ಮತ್ತೆ ಬುಕ್ ಮಾಡಲು ಹೇಳಿ.' },
@@ -54,9 +65,17 @@ export const verdictOf = (v, lang = 'en') => {
 };
 
 export const TONE = {
+  act: { bar: 'bg-act-500', soft: 'bg-act-50 border-act-500/30', solid: 'bg-act-500 text-white', text: 'text-act-700', chip: 'bg-act-500 text-white', icon: '↓' },
   go: { bar: 'bg-pass-500', soft: 'bg-pass-50 border-pass-500/25', solid: 'bg-pass-500 text-white', text: 'text-pass-700', chip: 'bg-pass-500 text-white', icon: '✓' },
   stop: { bar: 'bg-stop-600', soft: 'bg-stop-50 border-stop-500/25', solid: 'bg-stop-600 text-white', text: 'text-stop-700', chip: 'bg-stop-600 text-white', icon: '✕' },
   ask: { bar: 'bg-ask-500', soft: 'bg-ask-50 border-ask-500/30', solid: 'bg-ask-500 text-white', text: 'text-ask-700', chip: 'bg-ask-500 text-white', icon: '!' },
+  /*
+   * Done: a fact, not an instruction. Not green, because green at a barrier
+   * means let them through, and a checked-in pass must not be let through a
+   * second time. Not red, because nothing is wrong. The brand teal, and a word
+   * rather than a tick, so it cannot be mistaken for "go" from a metre away.
+   */
+  done: { bar: 'bg-brand', soft: 'bg-brand/5 border-brand/25', solid: 'bg-brand text-white', text: 'text-brand', chip: 'bg-brand text-white', icon: 'IN' },
 };
 
 export const toneOf = (v) => TONE[verdictOf(v).tone];

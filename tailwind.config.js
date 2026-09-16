@@ -12,6 +12,10 @@ export default {
         pass: { 50: '#e9f9ef', 500: '#12a150', 600: '#0d8a43', 700: '#0a6c34' },
         stop: { 50: '#fdecec', 500: '#d92d20', 600: '#b42318', 700: '#912018' },
         ask: { 50: '#fff6e5', 500: '#e08700', 600: '#b86e00', 700: '#8f5600' },
+        /* Blue means "your move": a valid pass that has not been recorded yet.
+           Green is kept for after the tap, so a staff member never reads a
+           pass that still needs recording as one that is done (2026-09-16). */
+        act: { 50: '#e8f1fd', 500: '#1d6fe0', 600: '#155bc2', 700: '#0f478f' },
         ink: '#0d1b1e', muted: '#5d7169', line: '#dde7e3', shell: '#f2f6f4',
       },
       fontFamily: {

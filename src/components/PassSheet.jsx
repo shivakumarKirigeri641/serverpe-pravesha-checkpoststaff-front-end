@@ -144,7 +144,7 @@ export default function PassSheet({ ticketNo, typed, fallbackPass = null, onClos
     ? { verdict: result.verdict, pass: result.pass, message: result.message, blocking: false }
     : (result || data || {});
   const pass = shown.pass || data?.pass;
-  const verdictKey = result?.ok ? 'valid' : shown.verdict;
+  const verdictKey = result?.ok ? 'recorded' : shown.verdict;
   const v = verdictOf(verdictKey, lang);
   const tone = toneOf(verdictKey);
   const done = Boolean(result?.ok);
@@ -190,7 +190,8 @@ export default function PassSheet({ ticketNo, typed, fallbackPass = null, onClos
                 </div>
               )}
               <div className="flex items-center gap-4">
-                <span className="grid h-16 w-16 shrink-0 animate-pop place-items-center rounded-full bg-white/20 text-4xl font-black">
+                {/* A word (IN) is set smaller than a glyph so it fits the same circle. */}
+                <span className={`grid h-16 w-16 shrink-0 animate-pop place-items-center rounded-full bg-white/20 font-black ${tone.icon.length > 1 ? 'text-2xl' : 'text-4xl'}`}>
                   {tone.icon}
                 </span>
                 <div className="min-w-0">
@@ -264,12 +265,15 @@ export default function PassSheet({ ticketNo, typed, fallbackPass = null, onClos
                 </div>
               )}
               {canRecord && (
-                <button type="button" className={needsOverride ? 'btn w-full bg-ask-500 py-4 text-[17px] text-white' : 'btn-go w-full'}
+                /* The one thing left to do, so it asks for it: blue, pulsing,
+                   and saying "tap". It stops the moment it is pressed. */
+                <button type="button"
+                  className={needsOverride ? 'btn w-full bg-ask-500 py-4 text-[17px] text-white' : `btn-act w-full ${busy ? '' : 'tap-me'}`}
                   disabled={busy} onClick={() => record(needsOverride)}>
                   {busy ? t('recording')
                     : needsOverride ? t('allowRecord')
-                      : selfDeclared ? t('confirmSelf')
-                        : t('recordEntry')}
+                      : selfDeclared ? `👆 ${t('confirmSelf')}`
+                        : `👆 ${t('tapToRecord')}`}
                 </button>
               )}
               <button type="button" className={done ? 'btn-primary w-full' : 'btn-quiet w-full'} onClick={onClose}>

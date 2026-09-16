@@ -33,6 +33,7 @@ const S = {
     peopleCount: '{n} people', perPersonPass: 'Per-person pass',
     howManyEntering: 'How many are entering?', bookedForN: 'Booked for {n}',
     matchOne: '{n} match', matchMany: '{n} matches', stillLooking: 'still looking',
+    matchSplit: '{pending} to come, {entered} checked in',
     verifiedShift: 'Verified this shift', passSold: 'pass sold', entryRecorded: 'entry recorded',
     showAllChecked: 'Show all {n}', showFewerChecked: 'Show fewer', expectedToday: '{n} expected today',
     clearSearch: 'Clear',
@@ -44,7 +45,7 @@ const S = {
     loadingToday: 'Loading today’s passes…',
     noPassFound: 'No pass found for that number. Check the digits, or ask the visitor for their pass number.',
     allCame: 'Every booked vehicle has come through.', noEntries: 'No entries recorded yet.',
-    sellForVehicle: 'Sell a pass for this vehicle', inAt: 'In at {t}',
+    sellForVehicle: 'Sell a pass for this vehicle', inAt: 'Checked in {t}',
 
     endQ: 'End your shift?',
     endBody: 'This gate stops recording entries until somebody signs in again with a code sent to their mobile number.',
@@ -57,9 +58,9 @@ const S = {
     savedForAdmin: 'This summary is saved for the office when you end the shift.',
 
     checkingPass: 'Checking the pass…', close: 'Close', entryRecordedTitle: 'Entry recorded',
-    atTime: 'at {t}', usedAt: 'Used at {t}', pass: 'Pass', visitor: 'Visitor', date: 'Date', slot: 'Slot',
+    atTime: 'at {t}', usedAt: 'Checked in at {t}', pass: 'Pass', visitor: 'Visitor', date: 'Date', slot: 'Slot',
     mobile: 'Mobile', paid: 'Paid', recording: 'Recording…', allowRecord: 'Allow and record entry',
-    confirmSelf: 'Vehicle checked — confirm entry', recordEntry: 'Record entry', nextVehicle: 'Next vehicle now',
+    confirmSelf: 'Vehicle checked — confirm entry', recordEntry: 'Record entry', tapToRecord: 'Tap to record entry', nextVehicle: 'Next vehicle now',
     doNotAllow: 'Do not allow', letThrough: 'Let them through',
 
     today: 'Today', yesterday: 'Yesterday', prevDay: 'Previous day', nextDay: 'Next day',
@@ -141,9 +142,6 @@ const S = {
     watchCheckTitle: 'Check this vehicle carefully', watchReason: 'The office says: {r}', watchChip: 'Watchlist',
     watchBlockedChip: 'Blocked',
 
-    otherTabOne: '1 more match is under {tab}.',
-    otherTabMany: '{n} more matches are under {tab}.',
-    showThem: 'Show them',
   },
   kn: {
     checkingShift: 'ನಿಮ್ಮ ಶಿಫ್ಟ್ ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ…',
@@ -156,6 +154,7 @@ const S = {
     peopleCount: '{n} ಜನರು', perPersonPass: 'ಪ್ರತಿ ವ್ಯಕ್ತಿಗೆ ಪಾಸ್',
     howManyEntering: 'ಎಷ್ಟು ಜನ ಪ್ರವೇಶಿಸುತ್ತಿದ್ದಾರೆ?', bookedForN: '{n} ಜನರಿಗೆ ಬುಕ್',
     matchOne: '{n} ಹೊಂದಾಣಿಕೆ', matchMany: '{n} ಹೊಂದಾಣಿಕೆಗಳು', stillLooking: 'ಇನ್ನೂ ಹುಡುಕಲಾಗುತ್ತಿದೆ',
+    matchSplit: '{pending} ಬರಬೇಕಿದೆ, {entered} ಚೆಕ್-ಇನ್',
     verifiedShift: 'ಈ ಶಿಫ್ಟ್‌ನಲ್ಲಿ ಪರಿಶೀಲಿಸಿದವು', passSold: 'ಪಾಸ್ ಮಾರಾಟ', entryRecorded: 'ಪ್ರವೇಶ ದಾಖಲಾಗಿದೆ',
     showAllChecked: 'ಎಲ್ಲಾ {n} ತೋರಿಸಿ', showFewerChecked: 'ಕಡಿಮೆ ತೋರಿಸಿ', expectedToday: 'ಇಂದು {n} ನಿರೀಕ್ಷಿತ',
     clearSearch: 'ಅಳಿಸಿ',
@@ -167,7 +166,7 @@ const S = {
     loadingToday: 'ಇಂದಿನ ಪಾಸ್‌ಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ…',
     noPassFound: 'ಆ ಸಂಖ್ಯೆಗೆ ಪಾಸ್ ಸಿಗಲಿಲ್ಲ. ಅಂಕಿಗಳನ್ನು ಪರಿಶೀಲಿಸಿ, ಅಥವಾ ಪ್ರವಾಸಿಗರ ಪಾಸ್ ಸಂಖ್ಯೆ ಕೇಳಿ.',
     allCame: 'ಬುಕ್ ಮಾಡಿದ ಎಲ್ಲಾ ವಾಹನಗಳು ಬಂದಿವೆ.', noEntries: 'ಇನ್ನೂ ಯಾವುದೇ ಪ್ರವೇಶ ದಾಖಲಾಗಿಲ್ಲ.',
-    sellForVehicle: 'ಈ ವಾಹನಕ್ಕೆ ಪಾಸ್ ಮಾರಾಟ ಮಾಡಿ', inAt: 'ಒಳಗೆ {t}',
+    sellForVehicle: 'ಈ ವಾಹನಕ್ಕೆ ಪಾಸ್ ಮಾರಾಟ ಮಾಡಿ', inAt: 'ಚೆಕ್-ಇನ್ {t}',
 
     endQ: 'ನಿಮ್ಮ ಶಿಫ್ಟ್ ಮುಗಿಸಬೇಕೆ?',
     endBody: 'ಯಾರಾದರೂ ತಮ್ಮ ಮೊಬೈಲ್‌ಗೆ ಬಂದ ಕೋಡ್‌ನೊಂದಿಗೆ ಮತ್ತೆ ಸೈನ್ ಇನ್ ಮಾಡುವವರೆಗೆ ಈ ಗೇಟ್ ಪ್ರವೇಶಗಳನ್ನು ದಾಖಲಿಸುವುದಿಲ್ಲ.',
@@ -180,9 +179,9 @@ const S = {
     savedForAdmin: 'ಶಿಫ್ಟ್ ಮುಗಿಸಿದಾಗ ಈ ಸಾರಾಂಶ ಕಚೇರಿಗಾಗಿ ಉಳಿಸಲಾಗುತ್ತದೆ.',
 
     checkingPass: 'ಪಾಸ್ ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ…', close: 'ಮುಚ್ಚಿ', entryRecordedTitle: 'ಪ್ರವೇಶ ದಾಖಲಾಗಿದೆ',
-    atTime: 'ಸಮಯ {t}', usedAt: 'ಬಳಸಿದ ಸಮಯ {t}', pass: 'ಪಾಸ್', visitor: 'ಪ್ರವಾಸಿಗರು', date: 'ದಿನಾಂಕ', slot: 'ಸ್ಲಾಟ್',
+    atTime: 'ಸಮಯ {t}', usedAt: 'ಚೆಕ್-ಇನ್ ಸಮಯ {t}', pass: 'ಪಾಸ್', visitor: 'ಪ್ರವಾಸಿಗರು', date: 'ದಿನಾಂಕ', slot: 'ಸ್ಲಾಟ್',
     mobile: 'ಮೊಬೈಲ್', paid: 'ಪಾವತಿ', recording: 'ದಾಖಲಿಸಲಾಗುತ್ತಿದೆ…', allowRecord: 'ಅನುಮತಿಸಿ ಪ್ರವೇಶ ದಾಖಲಿಸಿ',
-    confirmSelf: 'ವಾಹನ ಪರಿಶೀಲಿಸಲಾಗಿದೆ — ಪ್ರವೇಶ ದೃಢೀಕರಿಸಿ', recordEntry: 'ಪ್ರವೇಶ ದಾಖಲಿಸಿ', nextVehicle: 'ಮುಂದಿನ ವಾಹನ',
+    confirmSelf: 'ವಾಹನ ಪರಿಶೀಲಿಸಲಾಗಿದೆ — ಪ್ರವೇಶ ದೃಢೀಕರಿಸಿ', recordEntry: 'ಪ್ರವೇಶ ದಾಖಲಿಸಿ', tapToRecord: 'ಪ್ರವೇಶ ದಾಖಲಿಸಲು ಒತ್ತಿ', nextVehicle: 'ಮುಂದಿನ ವಾಹನ',
     doNotAllow: 'ಅನುಮತಿಸಬೇಡಿ', letThrough: 'ಒಳಗೆ ಬಿಡಿ',
 
     today: 'ಇಂದು', yesterday: 'ನಿನ್ನೆ', prevDay: 'ಹಿಂದಿನ ದಿನ', nextDay: 'ಮುಂದಿನ ದಿನ',
@@ -264,9 +263,6 @@ const S = {
     watchCheckTitle: 'ಈ ವಾಹನವನ್ನು ಎಚ್ಚರಿಕೆಯಿಂದ ಪರಿಶೀಲಿಸಿ', watchReason: 'ಕಚೇರಿ ಹೇಳಿದ ಕಾರಣ: {r}', watchChip: 'ನಿಗಾ ಪಟ್ಟಿ',
     watchBlockedChip: 'ನಿರ್ಬಂಧಿತ',
 
-    otherTabOne: '"{tab}" ನಲ್ಲಿ ಇನ್ನೂ 1 ಹೊಂದಾಣಿಕೆ ಇದೆ.',
-    otherTabMany: '"{tab}" ನಲ್ಲಿ ಇನ್ನೂ {n} ಹೊಂದಾಣಿಕೆಗಳಿವೆ.',
-    showThem: 'ತೋರಿಸಿ',
   },
 };
 
