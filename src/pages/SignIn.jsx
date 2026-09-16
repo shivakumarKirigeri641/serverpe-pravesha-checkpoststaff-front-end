@@ -78,8 +78,12 @@ export default function SignIn() {
       if (out.ok) return;
       if (out.error === 'choose_checkpost') { setChoices(out.checkposts); return; }
       setError({ message: out.message, messageKn: out.messageKn });
+      /* Back to the code form. Leaving the gate list up after a refusal left
+         buttons that could do nothing — the code they needed had just been
+         cleared — so a tap appeared to be ignored. */
+      setChoices(null);
       setCode('');
-      codeRef.current?.focus();
+      setTimeout(() => codeRef.current?.focus(), 50);
     } catch (e) {
       setError({ message: e.message });
     } finally {
@@ -118,6 +122,11 @@ export default function SignIn() {
                 </button>
               ))}
             </div>
+            {/* A way out of the list, to the code form it came from. */}
+            <button type="button" className="mt-3 text-[14px] font-semibold text-brand" disabled={busy}
+              onClick={() => { setChoices(null); setError(null); }}>
+              ← {t('back')}
+            </button>
           </div>
         ) : (
           <form className="card space-y-5 p-5"
