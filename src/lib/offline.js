@@ -73,6 +73,10 @@ export function withQueue(data) {
 export function savedArrivals() {
   const saved = read(KEYS.arrivals, null);
   if (!saved || !saved.data) return null;
+  /* Today's list only (user, 2026-09-17): a copy kept from an earlier day is
+     not shown as today's when the signal drops. */
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  if (saved.data.date && saved.data.date !== today) return null;
   return { ...withQueue(saved.data), savedAt: saved.savedAt, fromPhone: true };
 }
 

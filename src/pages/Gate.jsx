@@ -230,11 +230,12 @@ export default function Gate() {
     if (ticketNo) {
       recent.current.set(ticketNo, out.usedAt || new Date().toISOString());
       setArrivals((a) => markEntered(a, ticketNo, out.usedAt));
-      /* The vehicle is seen to move (user, 2026-09-16): the screen goes to
-         "Entered", where it now sits at the top, lit for a few seconds. On
-         "Still to come" it used to simply vanish. The search box is still
-         ready for the next plate, and a search covers both lists anyway. */
-      setTab('entered');
+      /* Back to the queue (user, 2026-09-17): once a vehicle is recorded the
+         next one is what matters, so the screen returns to "Still to come" with
+         the search box empty, ready for the next plate. The entry is still at
+         the top of "Entered" and in "Verified this shift". */
+      setTab('pending');
+      setQ('');
     }
     remember({
       ticketNo,
@@ -255,6 +256,16 @@ export default function Gate() {
     const id = setTimeout(() => setJustNow(null), 6000);
     return () => clearTimeout(id);
   }, [justNow]);
+
+  /* "Verified this shift" CLEARS ITSELF (user, 2026-09-17). It used to stay on
+     screen until the page was reloaded. It now goes a few seconds after the last
+     entry, leaving the queue clean for the next vehicle; the entries themselves
+     are still under "Entered". A new entry starts the wait again. */
+  useEffect(() => {
+    if (!verified.length) return undefined;
+    const id = setTimeout(() => { setVerified([]); setShowAllVerified(false); }, 6000);
+    return () => clearTimeout(id);
+  }, [verified]);
 
   /*
    * Back to the search box, empty, with the cursor in it — the next vehicle is
