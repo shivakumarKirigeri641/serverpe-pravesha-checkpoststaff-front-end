@@ -14,7 +14,7 @@
  * served from the saved copy first.
  */
 
-const CACHE = 'pravesha-gate-v1';
+const CACHE = 'pravesha-gate-v2';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png', '/favicon-32.png'];
 
 self.addEventListener('install', (event) => {
@@ -35,8 +35,9 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  /* The API is never answered from here. */
-  if (url.pathname.startsWith('/staff/')) return;
+  /* The API is never answered from here, nor is the build id the app compares
+     itself against (lib/pwa.js) — a saved copy would hide every new version. */
+  if (url.pathname.startsWith('/staff/') || url.pathname === '/version.json') return;
 
   /* The page: network first, the saved page when there is no signal. */
   if (req.mode === 'navigate') {

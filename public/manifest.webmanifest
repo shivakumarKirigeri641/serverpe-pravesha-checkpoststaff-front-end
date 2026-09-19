@@ -1,7 +1,7 @@
 {
   "name": "Pravesha Checkpost",
   "short_name": "Checkpost",
-  "description": "Record vehicle entries at the gate.",
+  "description": "Check passes and record vehicle and visitor entries at the gate.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f2f6f4",

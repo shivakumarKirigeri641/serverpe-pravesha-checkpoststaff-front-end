@@ -23,6 +23,9 @@ const readLang = () => {
 const S = {
   en: {
     checkingShift: 'Checking your shift…',
+    pwaInstall: 'Install the Checkpost app on this phone', pwaInstallBtn: 'Install', pwaNotNow: 'Not now',
+    pwaIosSteps: 'Tap Share, then “Add to Home Screen”.',
+    pwaUpdate: 'A new version is ready.', pwaRefresh: 'Refresh', pwaLater: 'Later',
     navCheck: 'Check', navPasses: 'Passes', navHistory: 'Earlier checks',
     langName: 'ಕನ್ನಡ', soundOn: 'Sound on', soundOff: 'Sound off',
 
@@ -145,6 +148,9 @@ const S = {
   },
   kn: {
     checkingShift: 'ನಿಮ್ಮ ಶಿಫ್ಟ್ ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ…',
+    pwaInstall: 'ಈ ಫೋನ್‌ನಲ್ಲಿ ಚೆಕ್‌ಪೋಸ್ಟ್ ಆ್ಯಪ್ ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಿ', pwaInstallBtn: 'ಇನ್‌ಸ್ಟಾಲ್', pwaNotNow: 'ಈಗ ಬೇಡ',
+    pwaIosSteps: 'Share ಒತ್ತಿ, ನಂತರ “Add to Home Screen” ಆಯ್ಕೆಮಾಡಿ.',
+    pwaUpdate: 'ಹೊಸ ಆವೃತ್ತಿ ಸಿದ್ಧವಾಗಿದೆ.', pwaRefresh: 'ರಿಫ್ರೆಶ್', pwaLater: 'ನಂತರ',
     navCheck: 'ಪರಿಶೀಲನೆ', navPasses: 'ಪಾಸ್‌ಗಳು', navHistory: 'ಹಿಂದಿನ ಪರಿಶೀಲನೆ',
     langName: 'English', soundOn: 'ಧ್ವನಿ ಆನ್', soundOff: 'ಧ್ವನಿ ಆಫ್',
 

@@ -3,6 +3,7 @@ import Gate from './pages/Gate.jsx';
 import History from './pages/History.jsx';
 import Passes from './pages/Passes.jsx';
 import SignIn from './pages/SignIn.jsx';
+import AppBanners from './components/AppBanners.jsx';
 import { useSession } from './lib/session';
 import { useT } from './lib/i18n.jsx';
 
@@ -29,10 +30,11 @@ export default function App() {
     );
   }
 
-  if (state !== 'ready') return <SignIn />;
+  if (state !== 'ready') return (<><AppBanners /><SignIn /></>);
 
   return (
     <>
+      <AppBanners />
       {tab === 'gate' && <Gate />}
       {tab === 'passes' && <Passes today={me?.serverDate} />}
       {tab === 'history' && <History today={me?.serverDate} />}
