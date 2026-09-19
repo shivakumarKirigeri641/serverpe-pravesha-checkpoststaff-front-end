@@ -3,10 +3,11 @@ import { api } from '../lib/api';
 import { useSession } from '../lib/session';
 import { LangToggle, useT } from '../lib/i18n.jsx';
 import { setSoundOn, soundOn } from '../lib/feedback';
-import { dismissProblem, markEntered, saveArrivals, savedArrivals, sendNow, subscribe, withQueue } from '../lib/offline';
+import { dismissProblem, markEntered, markExited, saveArrivals, savedArrivals, sendNow, subscribe, withQueue } from '../lib/offline';
 import { batteryWarning, useBattery, useDaylight, useWakeLock } from '../lib/device';
 import PassSheet from '../components/PassSheet.jsx';
 import SellSheet from '../components/SellSheet.jsx';
+import ExitSheet from '../components/ExitSheet.jsx';
 import { clock, plateText } from '../lib/verdict';
 
 /*
@@ -50,7 +51,10 @@ export default function Gate() {
   const [arrivals, setArrivals] = useState(null);
   const [offline, setOffline] = useState(false);
   const [net, setNet] = useState({ queued: 0, problems: [], sending: false });
+  /* Which list is drawn: still to come, inside, or out (063). Not a mode — every
+     card carries both Check in and Check out, and whichever applies is lit. */
   const [tab, setTab] = useState('pending');
+  const [exiting, setExiting] = useState(null);   // a pass being checked out
   const [showAllVerified, setShowAllVerified] = useState(false);
   /* How much of the queue is drawn. Reset whenever the list underneath changes. */
   const PAGE = 20;
@@ -91,6 +95,8 @@ export default function Gate() {
    * every list that arrives, until the server's own list shows them as used.
    */
   const recent = useRef(new Map());
+  /* The same for exits recorded here (063): out at once, whatever reload races it. */
+  const recentExits = useRef(new Map());
   const withRecent = useCallback((data) => {
     if (!data || !Array.isArray(data.passes)) return data;
     let next = data;
@@ -98,6 +104,11 @@ export default function Gate() {
       const onServer = data.passes.find((p) => p.ticketNo === ticketNo);
       if (onServer && onServer.status === 'used' && !data.fromPhone) recent.current.delete(ticketNo);
       else next = markEntered(next, ticketNo, at);
+    }
+    for (const [ticketNo, at] of recentExits.current) {
+      const onServer = data.passes.find((p) => p.ticketNo === ticketNo);
+      if (onServer && onServer.exitedAt && !data.fromPhone) recentExits.current.delete(ticketNo);
+      else next = markExited(next, ticketNo, at);
     }
     return next;
   }, []);
@@ -148,7 +159,8 @@ export default function Gate() {
         if (!alive) return;
         const moved = beat.current !== null && p.pulse !== beat.current;
         beat.current = p.pulse;
-        if (offline) { sendNow(); if (!open) load({ quiet: true }); } else if (moved && !open) load({ quiet: true });
+        const sheetOpen = open || exiting;
+        if (offline) { sendNow(); if (!sheetOpen) load({ quiet: true }); } else if (moved && !sheetOpen) load({ quiet: true });
       } catch (e) {
         if (alive && e.offline) setOffline(true);
       }
@@ -158,7 +170,7 @@ export default function Gate() {
     const onShow = () => { if (document.visibilityState === 'visible') { load({ quiet: true }); tick(); } };
     document.addEventListener('visibilitychange', onShow);
     return () => { alive = false; clearInterval(id); document.removeEventListener('visibilitychange', onShow); };
-  }, [load, open, offline]);
+  }, [load, open, exiting, offline]);
 
   /* The handover figures, added up the moment End shift is tapped. */
   useEffect(() => {
@@ -248,7 +260,16 @@ export default function Gate() {
     load({ quiet: true });
   };
 
-
+  /* A vehicle checked out (063): shown as out at once, back to "Inside" with the
+     search empty for the next one leaving. */
+  const onExited = (out) => {
+    recentExits.current.set(out.ticketNo, out.exitedAt || new Date().toISOString());
+    setArrivals((a) => markExited(a, out.ticketNo, out.exitedAt));
+    setQ('');
+    remember({ ticketNo: out.ticketNo, regNo: out.regNo, at: out.exitedAt, exit: true, saved: Boolean(out.offline),
+      type: out.pass?.category?.label || null });
+    load({ quiet: true });
+  };
 
   /* The highlight fades by itself. The line stays. */
   useEffect(() => {
@@ -305,14 +326,20 @@ export default function Gate() {
    *
    * The tabs sort the day's list when nothing is typed.
    */
-  const inTab = (p) => (tab === 'pending' ? p.status !== 'used' : p.status === 'used');
-  /* Newest entry first on "Entered", so the one just recorded is at the top. */
+  /* Three lists (063): still to come; inside — newest entry first, so the one
+     just recorded is at the top; out — newest exit first. Typing searches all
+     three, still to come first, then inside, then out. */
+  const isInside = (p) => p.status === 'used' && !p.exitedAt;
   const newestIn = (a, b) => String(b.usedAt || '').localeCompare(String(a.usedAt || ''));
+  const newestOut = (a, b) => String(b.exitedAt || '').localeCompare(String(a.exitedAt || ''));
+  const all = arrivals?.passes || [];
   const list = searchingNow
-    ? [...matches.filter((p) => p.status !== 'used'), ...matches.filter((p) => p.status === 'used')]
-    : tab === 'entered'
-      ? (arrivals?.passes || []).filter(inTab).sort(newestIn)
-      : (arrivals?.passes || []).filter(inTab);
+    ? [...matches.filter((p) => p.status !== 'used'), ...matches.filter(isInside), ...matches.filter((p) => p.exitedAt)]
+    : tab === 'inside'
+      ? all.filter(isInside).sort(newestIn)
+      : tab === 'out'
+        ? all.filter((p) => p.exitedAt).sort(newestOut)
+        : all.filter((p) => p.status !== 'used');
 
   /*
    * A BUSY SUNDAY IS SIX HUNDRED PASSES, AND NOBODY SCROLLS SIX HUNDRED CARDS.
@@ -413,10 +440,11 @@ export default function Gate() {
           {/* The tabs sit with the search box, not below the day's history:
               they are how a staff member says which list they are searching. */}
           <div className="mt-2.5 flex gap-2">
-            {/* While searching, neither tab is lit: the search covers both.
+            {/* While searching, no tab is lit: the search covers all three.
                 Tapping one goes back to that list. */}
             <Tab active={!searchingNow && tab === 'pending'} onClick={() => { setQ(''); setTab('pending'); }} label={`${t('stillToCome')} (${totals?.pending ?? 0})`} />
-            <Tab active={!searchingNow && tab === 'entered'} onClick={() => { setQ(''); setTab('entered'); }} label={`${t('entered')} (${totals?.entered ?? 0})`} />
+            <Tab active={!searchingNow && tab === 'inside'} onClick={() => { setQ(''); setTab('inside'); }} label={`${t('inside')} (${totals?.inside ?? 0})`} />
+            <Tab active={!searchingNow && tab === 'out'} onClick={() => { setQ(''); setTab('out'); }} label={`${t('outTab')} (${totals?.exited ?? 0})`} />
           </div>
           <p className="mt-1.5 px-1 text-[12.5px] text-muted">
             {!searchingNow ? t('searchHint')
@@ -478,7 +506,8 @@ export default function Gate() {
         {arrivals && list.length === 0 && (
           <div className="card px-5 py-8 text-center">
             <p className="text-[15px] text-muted">
-              {searchingNow ? t('noPassFound') : tab === 'pending' ? t('allCame') : t('noEntries')}
+              {searchingNow ? t('noPassFound')
+                : tab === 'inside' ? t('noneInside') : tab === 'out' ? t('noExits') : t('allCame')}
             </p>
             {searchingNow && (
               <button type="button" className="btn-primary mt-4 w-full" disabled={offline} onClick={() => setSelling(typed)}>
@@ -491,10 +520,15 @@ export default function Gate() {
         <ul className="list-in space-y-2">
           {shown.map((p) => (
             <li key={p.ticketNo}>
-              <button type="button" onClick={() => setOpen({ ticketNo: p.ticketNo, typed: q.trim() || null, pass: p })}
-                className={`card press flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors duration-700 ${
-                  p.ticketNo === justNow ? '!border-brand bg-brand/10 ring-2 ring-brand/30' : ''}`}>
-                <div className="min-w-0 flex-1">
+              {/*
+               * ONE CARD, BOTH DIRECTIONS (user, 2026-09-19). Type four digits,
+               * and the vehicle's card offers Check in and Check out side by
+               * side; whichever applies to it now is the lit one. No mode to
+               * switch, nothing to get wrong at a busy barrier.
+               */}
+              <div className={`card px-4 pb-3 pt-3.5 transition-colors duration-700 ${
+                p.ticketNo === justNow ? '!border-brand bg-brand/10 ring-2 ring-brand/30' : ''}`}>
+                <div className="min-w-0">
                   <div className="plate text-[19px]">
                     {/* A per-person pass (056) has no plate: it is read as people. */}
                     {p.passKind === 'person' ? t('peopleCount', { n: p.persons || 1 }) : plateText(p.regNo)}
@@ -518,10 +552,31 @@ export default function Gate() {
                     {p.travelDate !== arrivals?.date ? ` · ${p.travelDate}` : ''}
                   </div>
                 </div>
-                {p.status === 'used'
-                  ? <span className="chip bg-brand/10 text-brand">{p.savedOffline ? '📵 ' : ''}{t('inAt', { t: clock(p.usedAt) })}</span>
-                  : <span className="chip bg-shell text-muted">{t('expected')}</span>}
-              </button>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {/* Check in: lit until the vehicle has entered; then it shows when. */}
+                  {p.status === 'used' ? (
+                    <div className="grid place-items-center rounded-xl bg-brand/10 px-2 py-2.5 text-[14px] font-bold text-brand">
+                      {p.savedOffline ? '📵 ' : ''}{t('inAt', { t: clock(p.usedAt) })}
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => setOpen({ ticketNo: p.ticketNo, typed: q.trim() || null, pass: p })}
+                      className="press rounded-xl bg-act-500 px-2 py-2.5 text-[15px] font-extrabold text-white">
+                      ⬆ {t('modeIn')}
+                    </button>
+                  )}
+                  {/* Check out: lit while the vehicle is inside; then it shows when. */}
+                  {p.exitedAt ? (
+                    <div className="grid place-items-center rounded-xl bg-ask-50 px-2 py-2.5 text-[14px] font-bold text-ask-700">
+                      {p.exitSavedOffline ? '📵 ' : ''}{t('outAt', { t: clock(p.exitedAt) })}
+                    </div>
+                  ) : (
+                    <button type="button" disabled={p.status !== 'used'} onClick={() => setExiting(p)}
+                      className="press rounded-xl bg-ask-500 px-2 py-2.5 text-[15px] font-extrabold text-white disabled:bg-shell disabled:text-muted/60">
+                      ⬇ {t('modeOut')}
+                    </button>
+                  )}
+                </div>
+              </div>
             </li>
           ))}
         </ul>
@@ -560,7 +615,7 @@ export default function Gate() {
                   <div className="min-w-0">
                     <div className="plate text-[17px]">{plateText(e.regNo)}</div>
                     <div className="truncate text-[13px] text-muted">
-                      {e.sold ? `${t('passSold')} · ${e.sold}` : e.type || t('entryRecorded')}
+                      {e.exit ? t('exitRecorded') : e.sold ? `${t('passSold')} · ${e.sold}` : e.type || t('entryRecorded')}
                       {e.override ? ` · ${t('allowedOutside')}` : ''}
                       {e.saved ? ` · 📵 ${t('savedOfflineShort')}` : ''}
                     </div>
@@ -585,6 +640,11 @@ export default function Gate() {
       {open && (
         <PassSheet ticketNo={open.ticketNo} typed={open.typed} fallbackPass={open.pass || null}
           onClose={closeSheet} onRecorded={onRecorded} />
+      )}
+
+      {exiting && (
+        <ExitSheet pass={exiting} onDone={onExited}
+          onClose={() => { setExiting(null); setQ(''); requestAnimationFrame(() => searchRef.current?.focus()); }} />
       )}
 
       {/*

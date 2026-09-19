@@ -97,6 +97,11 @@ export const api = {
       persons: item.persons ?? null,
     },
   }),
+  /* Check-out (063): now, or saved on the phone and sent later. */
+  exit: (ticketNo) => call('/exit', { method: 'POST', body: { ticketNo } }),
+  exitOffline: (item) => call('/exit/offline', {
+    method: 'POST', body: { ticketNo: item.ticketNo, clientId: item.clientId, recordedAt: item.recordedAt },
+  }),
   arrivals: (date) => call(`/arrivals${date ? `?date=${date}` : ''}`),
   search: (q) => call(`/search?q=${encodeURIComponent(q)}`),
   pass: (ticketNo) => call(`/pass/${encodeURIComponent(ticketNo)}`),

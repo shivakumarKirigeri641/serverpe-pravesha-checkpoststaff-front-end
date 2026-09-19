@@ -25,7 +25,7 @@ import { api } from './api';
  * place. That waits for signal.
  */
 
-const KEYS = { arrivals: 'pv_gate_arrivals', queue: 'pv_gate_queue', problems: 'pv_gate_problems' };
+const KEYS = { arrivals: 'pv_gate_arrivals', queue: 'pv_gate_queue', problems: 'pv_gate_problems', exits: 'pv_gate_exit_queue' };
 const LAST_ENTRY_BUFFER_MIN = 60;
 
 const read = (key, fallback) => {
@@ -36,7 +36,7 @@ const write = (key, value) => {
 };
 
 const listeners = new Set();
-const snapshot = () => ({ queued: queue().length, problems: problems(), sending });
+const snapshot = () => ({ queued: queue().length + exitQueue().length, problems: problems(), sending });
 const notify = () => listeners.forEach((fn) => fn(snapshot()));
 
 /** Screens that show the queue subscribe; the first subscriber starts the sender. */
@@ -61,12 +61,32 @@ export function saveArrivals(data) {
 export function withQueue(data) {
   if (!data || !Array.isArray(data.passes)) return data;
   const waiting = new Map(queue().map((q) => [q.ticketNo, q]));
-  if (!waiting.size) return data;
-  const passes = data.passes.map((p) => (waiting.has(p.ticketNo) && p.status !== 'used'
-    ? { ...p, status: 'used', usedAt: waiting.get(p.ticketNo).recordedAt, savedOffline: true }
-    : p));
-  const entered = passes.filter((p) => p.status === 'used').length;
-  return { ...data, passes, totals: { ...(data.totals || {}), expected: passes.length, entered, pending: passes.length - entered } };
+  const leaving = new Map(exitQueue().map((q) => [q.ticketNo, q]));
+  if (!waiting.size && !leaving.size) return data;
+  const passes = data.passes.map((p) => {
+    let next = p;
+    if (waiting.has(p.ticketNo) && next.status !== 'used') {
+      next = { ...next, status: 'used', usedAt: waiting.get(p.ticketNo).recordedAt, savedOffline: true };
+    }
+    /* Check-out kept on the phone: shown as out straight away. */
+    if (leaving.has(p.ticketNo) && next.status === 'used' && !next.exitedAt) {
+      next = { ...next, exitedAt: leaving.get(p.ticketNo).recordedAt, exitSavedOffline: true };
+    }
+    return next;
+  });
+  return { ...data, passes, totals: { ...(data.totals || {}), ...countsOf(passes) } };
+}
+
+/** The day's figures from the list itself — the same ones the server sends. */
+function countsOf(passes) {
+  const entered = passes.filter((p) => p.status === 'used');
+  return {
+    expected: passes.length,
+    entered: entered.length,
+    pending: passes.length - entered.length,
+    exited: entered.filter((p) => p.exitedAt).length,
+    inside: entered.filter((p) => !p.exitedAt).length,
+  };
 }
 
 /** The saved list, with anything recorded offline already shown as entered. */
@@ -93,8 +113,20 @@ export function markEntered(data, ticketNo, usedAt) {
     return { ...p, status: 'used', usedAt: usedAt || new Date().toISOString() };
   });
   if (!changed) return data;
-  const entered = passes.filter((p) => p.status === 'used').length;
-  return { ...data, passes, totals: { ...(data.totals || {}), entered, pending: passes.length - entered } };
+  return { ...data, passes, totals: { ...(data.totals || {}), ...countsOf(passes) } };
+}
+
+/** One pass shown as checked out at once (063), before any reload confirms it. */
+export function markExited(data, ticketNo, exitedAt) {
+  if (!data || !Array.isArray(data.passes) || !ticketNo) return data;
+  let changed = false;
+  const passes = data.passes.map((p) => {
+    if (p.ticketNo !== ticketNo || p.exitedAt) return p;
+    changed = true;
+    return { ...p, exitedAt: exitedAt || new Date().toISOString() };
+  });
+  if (!changed) return data;
+  return { ...data, passes, totals: { ...(data.totals || {}), ...countsOf(passes) } };
 }
 
 /* ─────────────────────────────────────────────────── a verdict, offline */
@@ -169,6 +201,25 @@ export function enqueue({ pass, override = false, typed = null, elapsedMs = null
   return item;
 }
 
+/* ─────────────────────────────────────────────── exits waiting to send */
+
+export const exitQueue = () => read(KEYS.exits, []);
+
+/** Keep a check-out on the phone, to be sent when the signal is back (063). */
+export function enqueueExit({ pass }) {
+  const item = {
+    clientId: newId(),
+    ticketNo: pass.ticketNo,
+    regNo: pass.regNo,
+    recordedAt: new Date().toISOString(),
+    kind: 'exit',
+  };
+  write(KEYS.exits, [...exitQueue().filter((q) => q.ticketNo !== pass.ticketNo), item]);
+  notify();
+  setTimeout(sendNow, 0);
+  return item;
+}
+
 export function dismissProblem(clientId) {
   write(KEYS.problems, problems().filter((p) => p.clientId !== clientId));
   notify();
@@ -181,10 +232,11 @@ let sending = false;
  * not reach the server — the rest wait for the next attempt, in order.
  */
 export async function sendNow() {
-  if (sending || !queue().length) return;
+  if (sending || (!queue().length && !exitQueue().length)) return;
   sending = true;
   notify();
   try {
+    /* Entries first: an exit is only accepted for a pass already checked in. */
     for (const item of queue()) {
       let out;
       try {
@@ -203,6 +255,28 @@ export async function sendNow() {
       }
       notify();
     }
+    /* Then check-outs (063). Stops at the first that does not reach the server,
+       like entries; only once every entry has gone. */
+    if (!queue().length) {
+      for (const item of exitQueue()) {
+        let out;
+        try {
+          out = await api.exitOffline(item);
+        } catch (e) {
+          if (e.offline || e.status === 401 || e.status >= 500) break;
+          out = { ok: false, message: e.message };
+        }
+        write(KEYS.exits, exitQueue().filter((q) => q.clientId !== item.clientId));
+        /* Already out is not a problem worth showing: the vehicle left either way. */
+        if (!out.ok && out.verdict !== 'already_exited') {
+          write(KEYS.problems, [...problems(), {
+            clientId: item.clientId, ticketNo: item.ticketNo, regNo: item.regNo, recordedAt: item.recordedAt,
+            verdict: out.verdict || null, message: out.message || null, kind: 'exit',
+          }]);
+        }
+        notify();
+      }
+    }
   } finally {
     sending = false;
     notify();
@@ -214,6 +288,6 @@ function startSender() {
   if (started || typeof window === 'undefined') return;
   started = true;
   window.addEventListener('online', () => { sendNow(); });
-  setInterval(() => { if (queue().length && document.visibilityState === 'visible') sendNow(); }, 15000);
+  setInterval(() => { if ((queue().length || exitQueue().length) && document.visibilityState === 'visible') sendNow(); }, 15000);
   sendNow();
 }
