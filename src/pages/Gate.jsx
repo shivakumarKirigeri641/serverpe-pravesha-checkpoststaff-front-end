@@ -374,7 +374,12 @@ export default function Gate() {
        */}
       <div className="sticky top-0 z-20 shadow-soft">
       <header className="bg-brand text-white">
-        <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
+        {/* TWO ROWS ON A PHONE (user, 2026-09-19). On one row the five controls
+            took the whole width and the checkpost and staff names shrank to a
+            letter each. The names now have the top row to themselves, End shift
+            beside them; the controls sit underneath, Sell a pass taking the
+            space that is left. */}
+        <div className="mx-auto flex max-w-lg items-start justify-between gap-3 px-4 pt-3">
           <div className="min-w-0">
             <div className="truncate text-[15px] font-bold">{me?.checkpost?.name}</div>
             <div className="truncate text-[12px] text-white/70">
@@ -382,7 +387,12 @@ export default function Gate() {
               {totals ? ` · ${t('expectedToday', { n: totals.expected })}` : ''}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5">
+          <button type="button" onClick={() => setEnding(true)} className="shrink-0 rounded-lg border border-white/25 px-2.5 py-1.5 text-[13px] font-semibold">
+            {t('endShift')}
+          </button>
+        </div>
+        <div className="mx-auto max-w-lg px-4 pb-3 pt-2.5">
+          <div className="flex items-center gap-1.5">
             {/* Language and sound had a row of their own — chosen once a shift,
                 paid for on every screen. Icons, with the word for a long press. */}
             <LangToggle className="bg-white/15 text-white" />
@@ -399,11 +409,8 @@ export default function Gate() {
               {sound ? '🔔' : '🔕'}
             </button>
             <button type="button" onClick={() => setSelling('')} disabled={offline} title={offline ? t('sellNeedsSignal') : undefined}
-              className="rounded-lg bg-white px-3 py-2 text-[13px] font-bold text-brand disabled:opacity-50">
-              {t('sellPass')}
-            </button>
-            <button type="button" onClick={() => setEnding(true)} className="rounded-lg border border-white/25 px-2.5 py-2 text-[13px] font-semibold">
-              {t('endShift')}
+              className="min-w-0 flex-1 truncate rounded-lg bg-white px-3 py-2 text-[14px] font-bold text-brand disabled:opacity-50">
+              ＋ {t('sellPass')}
             </button>
           </div>
         </div>
@@ -424,7 +431,7 @@ export default function Gate() {
               needs a real target, and the next vehicle is the next four digits. */}
           <div className="flex gap-2">
             <input
-              ref={searchRef} className="field min-w-0 flex-1 text-[18px] uppercase tracking-wide" autoFocus
+              ref={searchRef} className="field min-w-0 flex-1 text-[18px] uppercase tracking-wide placeholder:text-[15px] placeholder:normal-case placeholder:tracking-normal" autoFocus
               placeholder={t('searchPh')} value={q} inputMode="text"
               autoCapitalize="characters" autoCorrect="off" spellCheck={false}
               onChange={(e) => setQ(e.target.value)}
@@ -442,9 +449,9 @@ export default function Gate() {
           <div className="mt-2.5 flex gap-2">
             {/* While searching, no tab is lit: the search covers all three.
                 Tapping one goes back to that list. */}
-            <Tab active={!searchingNow && tab === 'pending'} onClick={() => { setQ(''); setTab('pending'); }} label={`${t('stillToCome')} (${totals?.pending ?? 0})`} />
-            <Tab active={!searchingNow && tab === 'inside'} onClick={() => { setQ(''); setTab('inside'); }} label={`${t('inside')} (${totals?.inside ?? 0})`} />
-            <Tab active={!searchingNow && tab === 'out'} onClick={() => { setQ(''); setTab('out'); }} label={`${t('outTab')} (${totals?.exited ?? 0})`} />
+            <Tab active={!searchingNow && tab === 'pending'} onClick={() => { setQ(''); setTab('pending'); }} label={t('toComeTab')} count={totals?.pending ?? 0} />
+            <Tab active={!searchingNow && tab === 'inside'} onClick={() => { setQ(''); setTab('inside'); }} label={t('inside')} count={totals?.inside ?? 0} />
+            <Tab active={!searchingNow && tab === 'out'} onClick={() => { setQ(''); setTab('out'); }} label={t('outTab')} count={totals?.exited ?? 0} />
           </div>
           <p className="mt-1.5 px-1 text-[12.5px] text-muted">
             {!searchingNow ? t('searchHint')
@@ -751,9 +758,14 @@ const Line = ({ label, value, strong = false }) => (
 );
 
 
-const Tab = ({ active, onClick, label }) => (
+/* One line on any phone: a short label and the count in a badge, so the three
+   tabs are always the same height (user, 2026-09-19). */
+const Tab = ({ active, onClick, label, count }) => (
   <button type="button" onClick={onClick}
-    className={`flex-1 rounded-xl px-3 py-2.5 text-[14px] font-semibold ${active ? 'bg-brand text-white' : 'border border-line bg-white text-muted'}`}>
-    {label}
+    className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-[14px] font-semibold ${active ? 'bg-brand text-white' : 'border border-line bg-white text-muted'}`}>
+    <span className="truncate">{label}</span>
+    {count !== undefined && (
+      <span className={`shrink-0 rounded-full px-1.5 text-[12px] font-bold leading-[18px] ${active ? 'bg-white/25 text-white' : 'bg-shell text-ink'}`}>{count}</span>
+    )}
   </button>
 );

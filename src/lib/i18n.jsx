@@ -27,7 +27,7 @@ const S = {
     pwaIosSteps: 'Tap Share, then “Add to Home Screen”.',
     pwaUpdate: 'A new version is ready.', pwaRefresh: 'Refresh', pwaLater: 'Later',
     /* Check-out (063). */
-    outTab: 'Out', modeIn: 'Check in', modeOut: 'Check out', inside: 'Inside', checkedOut: 'Checked out',
+    toComeTab: 'To come', outTab: 'Out', modeIn: 'Check in', modeOut: 'Check out', inside: 'Inside', checkedOut: 'Checked out',
     outAt: 'Out {t}', recordExit: 'Record exit', recordingExit: 'Recording…', exitRecorded: 'Exit recorded',
     exitSavedOffline: 'Exit saved on the phone — it will be sent when the signal is back.',
     insideFor: 'Inside for {d}', enteredAtLabel: 'Entered', exitedAtLabel: 'Exited',
@@ -39,7 +39,7 @@ const S = {
 
     onDuty: 'on duty', sellPass: 'Sell a pass', endShift: 'End shift',
     expected: 'Expected', entered: 'Entered', stillToCome: 'Still to come',
-    searchPh: 'Vehicle number or pass number', searchHint: 'Type the last 4 digits of the number plate.',
+    searchPh: 'Plate or pass number', searchHint: 'Type the last 4 digits of the number plate.',
     /* Per-person passes: no vehicle, a number of people instead (056). */
     peopleCount: '{n} people', perPersonPass: 'Per-person pass',
     howManyEntering: 'How many are entering?', bookedForN: 'Booked for {n}',
@@ -161,7 +161,7 @@ const S = {
     pwaInstall: 'ಈ ಫೋನ್‌ನಲ್ಲಿ ಚೆಕ್‌ಪೋಸ್ಟ್ ಆ್ಯಪ್ ಇನ್‌ಸ್ಟಾಲ್ ಮಾಡಿ', pwaInstallBtn: 'ಇನ್‌ಸ್ಟಾಲ್', pwaNotNow: 'ಈಗ ಬೇಡ',
     pwaIosSteps: 'Share ಒತ್ತಿ, ನಂತರ “Add to Home Screen” ಆಯ್ಕೆಮಾಡಿ.',
     pwaUpdate: 'ಹೊಸ ಆವೃತ್ತಿ ಸಿದ್ಧವಾಗಿದೆ.', pwaRefresh: 'ರಿಫ್ರೆಶ್', pwaLater: 'ನಂತರ',
-    outTab: 'ಹೊರಗೆ', modeIn: 'ಪ್ರವೇಶ', modeOut: 'ನಿರ್ಗಮನ', inside: 'ಒಳಗಿರುವವರು', checkedOut: 'ನಿರ್ಗಮಿಸಿದವರು',
+    toComeTab: 'ಬರಬೇಕಿದೆ', outTab: 'ಹೊರಗೆ', modeIn: 'ಪ್ರವೇಶ', modeOut: 'ನಿರ್ಗಮನ', inside: 'ಒಳಗಿರುವವರು', checkedOut: 'ನಿರ್ಗಮಿಸಿದವರು',
     outAt: 'ನಿರ್ಗಮನ {t}', recordExit: 'ನಿರ್ಗಮನ ದಾಖಲಿಸಿ', recordingExit: 'ದಾಖಲಿಸಲಾಗುತ್ತಿದೆ…', exitRecorded: 'ನಿರ್ಗಮನ ದಾಖಲಾಗಿದೆ',
     exitSavedOffline: 'ನಿರ್ಗಮನ ಫೋನ್‌ನಲ್ಲಿ ಉಳಿಸಲಾಗಿದೆ — ನೆಟ್‌ವರ್ಕ್ ಬಂದಾಗ ಕಳುಹಿಸಲಾಗುತ್ತದೆ.',
     insideFor: '{d} ಒಳಗಿದ್ದಾರೆ', enteredAtLabel: 'ಪ್ರವೇಶ', exitedAtLabel: 'ನಿರ್ಗಮನ',
@@ -173,7 +173,7 @@ const S = {
 
     onDuty: 'ಕರ್ತವ್ಯದಲ್ಲಿ', sellPass: 'ಪಾಸ್ ಮಾರಾಟ', endShift: 'ಶಿಫ್ಟ್ ಮುಗಿಸಿ',
     expected: 'ನಿರೀಕ್ಷಿತ', entered: 'ಪ್ರವೇಶಿಸಿದವು', stillToCome: 'ಬರಬೇಕಾದವು',
-    searchPh: 'ವಾಹನ ಸಂಖ್ಯೆ ಅಥವಾ ಪಾಸ್ ಸಂಖ್ಯೆ', searchHint: 'ನಂಬರ್ ಪ್ಲೇಟ್‌ನ ಕೊನೆಯ 4 ಅಂಕಿಗಳನ್ನು ಟೈಪ್ ಮಾಡಿ.',
+    searchPh: 'ಪ್ಲೇಟ್ ಅಥವಾ ಪಾಸ್ ಸಂಖ್ಯೆ', searchHint: 'ನಂಬರ್ ಪ್ಲೇಟ್‌ನ ಕೊನೆಯ 4 ಅಂಕಿಗಳನ್ನು ಟೈಪ್ ಮಾಡಿ.',
     peopleCount: '{n} ಜನರು', perPersonPass: 'ಪ್ರತಿ ವ್ಯಕ್ತಿಗೆ ಪಾಸ್',
     howManyEntering: 'ಎಷ್ಟು ಜನ ಪ್ರವೇಶಿಸುತ್ತಿದ್ದಾರೆ?', bookedForN: '{n} ಜನರಿಗೆ ಬುಕ್',
     matchOne: '{n} ಹೊಂದಾಣಿಕೆ', matchMany: '{n} ಹೊಂದಾಣಿಕೆಗಳು', stillLooking: 'ಇನ್ನೂ ಹುಡುಕಲಾಗುತ್ತಿದೆ',

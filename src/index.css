@@ -8,6 +8,9 @@
   body { @apply bg-shell text-ink font-sans antialiased; -webkit-tap-highlight-color: transparent; }
   /* Staff type plates in a hurry — never let iOS zoom the field on focus. */
   input, button, select { font-size: 16px; }
+  /* A plate box types in capitals, but its hint does not: in capitals at 18px
+     "Number plate, pass number or name" ran off a 360px phone (2026-09-19). */
+  input.uppercase::placeholder { text-transform: none; letter-spacing: normal; font-size: 15px; }
 }
 
 @layer components {
