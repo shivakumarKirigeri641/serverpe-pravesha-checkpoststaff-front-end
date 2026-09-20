@@ -3,7 +3,13 @@
 @tailwind utilities;
 
 @layer base {
-  html { -webkit-text-size-adjust: 100%; }
+  /* SCROLLING ON A GATE PHONE (user, 2026-09-19): smooth jumps that clear the
+     sticky search bar, no rubber-banding of the page behind a list, and a slim
+     scrollbar where one is shown at all. */
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 9rem; scrollbar-width: thin; scrollbar-color: #075e5440 transparent; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #075e5455; border: 2px solid transparent; border-radius: 999px; background-clip: content-box; }
   /* A gate phone is held one-handed; nothing here should need a pinch. */
   body { @apply bg-shell text-ink font-sans antialiased; -webkit-tap-highlight-color: transparent; }
   /* Staff type plates in a hurry — never let iOS zoom the field on focus. */
@@ -42,6 +48,13 @@
    * phone set to reduce motion (see the rule at the bottom of this file).
    */
   .press { @apply transition duration-100 active:scale-[.985] active:brightness-[.98]; }
+  .bump { animation: bump .32s cubic-bezier(.22, 1, .36, 1); }
+  .skeleton { @apply relative overflow-hidden rounded-2xl bg-line/50; }
+  .skeleton::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent);
+    animation: shimmer 1.3s ease-in-out infinite;
+  }
   .list-in > * { animation: rise .22s ease-out both; }
   .list-in > *:nth-child(2) { animation-delay: .03s; }
   .list-in > *:nth-child(3) { animation-delay: .06s; }
@@ -66,6 +79,10 @@
 .daylight .field { border-width: 2px; border-color: #5d7169; font-weight: 700; }
 
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+/* A count that changes says so: one short lift, never a loop (2026-09-19). */
+@keyframes bump { 0% { transform: scale(1); } 35% { transform: scale(1.28); } 100% { transform: scale(1); } }
+/* Waiting, in the shape of what is coming. */
+@keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 @keyframes tap-me {
   0%, 100% { box-shadow: 0 0 0 0 rgba(29, 111, 224, 0.55); transform: scale(1); filter: brightness(1); }
   50%      { box-shadow: 0 0 0 12px rgba(29, 111, 224, 0); transform: scale(1.025); filter: brightness(1.12); }

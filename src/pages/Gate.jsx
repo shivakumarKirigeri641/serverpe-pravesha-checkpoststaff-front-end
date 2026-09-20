@@ -508,7 +508,11 @@ export default function Gate() {
           <p className="mb-3 rounded-xl border border-stop-500/25 bg-stop-50 px-4 py-3 text-[15px] text-stop-700">{error}</p>
         )}
 
-        {!arrivals && !error && <p className="py-10 text-center text-muted">{t('loadingToday')}</p>}
+        {!arrivals && !error && (
+          <div className="space-y-2" aria-busy="true" aria-label={t('loadingToday')}>
+            {[0, 1, 2].map((i) => <div key={i} className="skeleton h-[104px]" />)}
+          </div>
+        )}
 
         {arrivals && list.length === 0 && (
           <div className="card px-5 py-8 text-center">
@@ -524,7 +528,9 @@ export default function Gate() {
           </div>
         )}
 
-        <ul className="list-in space-y-2">
+        {/* Keyed by which list is on screen — not by what has been typed, or
+            the cards would re-animate under a thumb at every keystroke. */}
+        <ul key={searchingNow ? 'search' : tab} className="list-in space-y-2">
           {shown.map((p) => (
             <li key={p.ticketNo}>
               {/*
@@ -765,7 +771,11 @@ const Tab = ({ active, onClick, label, count }) => (
     className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-[14px] font-semibold ${active ? 'bg-brand text-white' : 'border border-line bg-white text-muted'}`}>
     <span className="truncate">{label}</span>
     {count !== undefined && (
-      <span className={`shrink-0 rounded-full px-1.5 text-[12px] font-bold leading-[18px] ${active ? 'bg-white/25 text-white' : 'bg-shell text-ink'}`}>{count}</span>
+      /* Keyed by the number itself: React swaps the node when it changes, so
+         the lift plays again. A pass bought while the phone is open, or a
+         vehicle checked out, is noticed without anybody watching the badge. */
+      <span key={count}
+        className={`bump shrink-0 rounded-full px-1.5 text-[12px] font-bold leading-[18px] ${active ? 'bg-white/25 text-white' : 'bg-shell text-ink'}`}>{count}</span>
     )}
   </button>
 );
